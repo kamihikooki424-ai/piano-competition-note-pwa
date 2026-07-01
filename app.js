@@ -1,6 +1,7 @@
 const STORE_KEY = "piano-note-zero-cost-v1";
 const REMINDER_KEY = "piano-note-reminders-v1";
 const BACKUP_KEY = "piano-note-last-backup-v1";
+const ONBOARDING_KEY = "piano-note-onboarding-seen-v1";
 const RECORDING_DB_NAME = "piano-note-recordings-v1";
 const RECORDING_STORE_NAME = "recordings";
 
@@ -19,6 +20,7 @@ const state = {
   recordingTimer: null,
   recordings: [],
   scores: [],
+  editingScoreId: "",
   practiceTimerSeconds: 15 * 60,
   practiceTimerRemaining: 15 * 60,
   practiceTimerId: null
@@ -50,10 +52,13 @@ const els = {
   recordTimer: $("#recordTimer"),
   recordingList: $("#recordingList"),
   latestScoreHero: $("#latestScoreHero"),
+  scoreFormTitle: $("#scoreFormTitle"),
+  scoreFormSubcopy: $("#scoreFormSubcopy"),
   scoreTotalPreview: $("#scoreTotalPreview"),
   scoreChart: $("#scoreChart"),
   scoreList: $("#scoreList"),
   teacherMemoOutput: $("#teacherMemoOutput"),
+  onboardingDialog: $("#onboardingDialog"),
   competitionDialog: $("#competitionDialog"),
   competitionForm: $("#competitionForm"),
   taskDialog: $("#taskDialog"),
@@ -328,6 +333,7 @@ function renderRecordings() {
         </div>
         <div class="recording-actions">
           <button class="mini-action-button" data-favorite-recording="${recording.id}">${recording.favorite ? "大切" : "通常"}</button>
+          <button class="mini-action-button" data-rename-recording="${recording.id}">名前</button>
           <button class="mini-danger-button" data-delete-recording="${recording.id}">削除</button>
         </div>
       </div>
@@ -339,6 +345,10 @@ function renderRecordings() {
 
   $$("[data-favorite-recording]").forEach((button) => {
     button.addEventListener("click", () => toggleRecordingFavorite(button.dataset.favoriteRecording));
+  });
+
+  $$("[data-rename-recording]").forEach((button) => {
+    button.addEventListener("click", () => renameRecording(button.dataset.renameRecording));
   });
 
   $$("[data-recording-memo]").forEach((textarea) => {
@@ -396,9 +406,16 @@ function renderGrowth() {
       </div>
       <p>${escapeHtml(score.comment || "総評なし")}</p>
       ${score.next ? `<p class="next-note">次：${escapeHtml(score.next)}</p>` : ""}
-      <button class="mini-danger-button" data-delete-score="${score.id}">削除</button>
+      <div class="score-card-actions">
+        <button class="mini-action-button" data-edit-score="${score.id}">編集</button>
+        <button class="mini-danger-button" data-delete-score="${score.id}">削除</button>
+      </div>
     </article>
   `).join("");
+
+  $$("[data-edit-score]").forEach((button) => {
+    button.addEventListener("click", () => openScoreEditor(button.dataset.editScore));
+  });
 
   $$("[data-delete-score]").forEach((button) => {
     button.addEventListener("click", () => deleteScore(button.dataset.deleteScore));
@@ -578,26 +595,72 @@ function updateScorePreview() {
   els.scoreTotalPreview.textContent = `${total}点`;
 }
 
-function addScore() {
+function saveScore() {
   const values = getScoreFormValues();
   const score = {
-    id: createId(),
+    id: state.editingScoreId || createId(),
     date: $("#scoreDateInput").value || todayKey(),
     type: $("#scoreTypeInput").value,
     ...values,
     comment: $("#scoreCommentInput").value.trim(),
     next: $("#scoreNextInput").value.trim()
   };
-  state.scores.push(score);
-  $("#scoreCommentInput").value = "";
-  $("#scoreNextInput").value = "";
+  if (state.editingScoreId) {
+    state.scores = state.scores.map((item) => item.id === state.editingScoreId ? score : item);
+  } else {
+    state.scores.push(score);
+  }
+  resetScoreForm();
   save();
   render();
+}
+
+function openScoreEditor(id) {
+  const score = state.scores.find((item) => item.id === id);
+  if (!score) return;
+  state.editingScoreId = id;
+  $("#scoreTypeInput").value = score.type || "teacher";
+  $("#scoreDateInput").value = score.date || todayKey();
+  $("#toneScoreInput").value = score.tone ?? 0;
+  $("#tempoScoreInput").value = score.tempo ?? 0;
+  $("#balanceScoreInput").value = score.balance ?? 0;
+  $("#phraseScoreInput").value = score.phrase ?? 0;
+  $("#styleScoreInput").value = score.style ?? 0;
+  $("#stageScoreInput").value = score.stage ?? 0;
+  $("#scoreCommentInput").value = score.comment || "";
+  $("#scoreNextInput").value = score.next || "";
+  els.scoreFormTitle.textContent = "採点を編集";
+  els.scoreFormSubcopy.textContent = "保存すると履歴の内容を更新します";
+  $("#addScoreButton").textContent = "変更を保存";
+  $("#cancelScoreEditButton").style.display = "";
+  updateScorePreview();
+  setView("growthView");
+  $("#scoreFormTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetScoreForm() {
+  state.editingScoreId = "";
+  $("#scoreTypeInput").value = "teacher";
+  $("#scoreDateInput").value = todayKey();
+  $("#toneScoreInput").value = "18";
+  $("#tempoScoreInput").value = "14";
+  $("#balanceScoreInput").value = "10";
+  $("#phraseScoreInput").value = "10";
+  $("#styleScoreInput").value = "10";
+  $("#stageScoreInput").value = "6";
+  $("#scoreCommentInput").value = "";
+  $("#scoreNextInput").value = "";
+  els.scoreFormTitle.textContent = "採点を追加";
+  els.scoreFormSubcopy.textContent = "6項目から総合点を自動計算";
+  $("#addScoreButton").textContent = "採点を保存";
+  $("#cancelScoreEditButton").style.display = "none";
+  updateScorePreview();
 }
 
 function deleteScore(id) {
   if (!confirm("この採点を削除しますか？")) return;
   state.scores = state.scores.filter((score) => score.id !== id);
+  if (state.editingScoreId === id) resetScoreForm();
   save();
   render();
 }
@@ -655,6 +718,22 @@ async function copyTeacherMemo() {
     els.teacherMemoOutput.select();
     alert("コピーできない場合は、メモ欄を選択して手動でコピーしてください。");
   }
+}
+
+function showOnboarding(force = false) {
+  if (!force && localStorage.getItem(ONBOARDING_KEY)) return;
+  if (els.reminderDialog.open) return;
+  els.onboardingDialog.showModal();
+}
+
+function closeOnboarding() {
+  localStorage.setItem(ONBOARDING_KEY, "true");
+  els.onboardingDialog.close();
+}
+
+function startOnboarding() {
+  closeOnboarding();
+  setView("practiceView");
 }
 
 function setView(viewId) {
@@ -847,6 +926,7 @@ async function updateRecordingInDb(id, updates) {
   if (!target) return;
   Object.assign(target, updates);
   renderRecordings();
+  els.teacherMemoOutput.value = buildTeacherMemo();
 
   try {
     const db = await openRecordingDb();
@@ -880,6 +960,16 @@ function toggleRecordingFavorite(id) {
 
 function updateRecordingMemo(id, memo) {
   updateRecordingInDb(id, { memo });
+}
+
+function renameRecording(id) {
+  const target = state.recordings.find((recording) => recording.id === id);
+  if (!target) return;
+  const nextName = prompt("録音名を入力してください", target.name);
+  if (nextName === null) return;
+  const trimmed = nextName.trim();
+  if (!trimmed) return;
+  updateRecordingInDb(id, { name: trimmed });
 }
 
 async function deleteRecording(id) {
@@ -1011,6 +1101,7 @@ async function clearAllData() {
   localStorage.removeItem(STORE_KEY);
   localStorage.removeItem(REMINDER_KEY);
   localStorage.removeItem(BACKUP_KEY);
+  localStorage.removeItem(ONBOARDING_KEY);
   state.recordings.forEach((recording) => URL.revokeObjectURL(recording.url));
   state.recordings = [];
 
@@ -1060,8 +1151,13 @@ function bind() {
   $("#deleteTaskButton").addEventListener("click", deleteTask);
   $$(".score-input").forEach((input) => input.addEventListener("input", updateScorePreview));
   $("#scoreDateInput").value = todayKey();
-  $("#addScoreButton").addEventListener("click", addScore);
+  $("#cancelScoreEditButton").style.display = "none";
+  $("#cancelScoreEditButton").addEventListener("click", resetScoreForm);
+  $("#addScoreButton").addEventListener("click", saveScore);
   $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
+  $("#showOnboardingButton").addEventListener("click", () => showOnboarding(true));
+  $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
+  $("#startOnboardingButton").addEventListener("click", startOnboarding);
   els.recordButton.addEventListener("click", toggleRecording);
   $("#confirmReminderButton").addEventListener("click", confirmReminder);
   $("#laterReminderButton").addEventListener("click", () => els.reminderDialog.close());
@@ -1079,3 +1175,4 @@ bind();
 render();
 loadRecordingsFromDb();
 setTimeout(() => checkReminders(), 300);
+setTimeout(() => showOnboarding(), 900);

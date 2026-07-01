@@ -212,6 +212,36 @@ main { padding-top: 16px; }
 .notice-card strong, .today-card strong { color: var(--green); }
 .notice-card span, .today-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
 
+.quick-start-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.quick-start-card button {
+  display: grid;
+  min-height: 76px;
+  place-items: center;
+  gap: 5px;
+  border: 1px solid rgba(39, 102, 123, .18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .9);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(18, 33, 31, .07);
+}
+
+.quick-start-card span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+}
+
 .section-heading { margin-top: 4px; }
 .section-heading p { margin-top: 4px; color: var(--muted); font-size: 12px; }
 
@@ -413,6 +443,13 @@ input:focus, textarea:focus, select:focus {
 
 .full-button { width: 100%; margin-top: 12px; }
 
+.split-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .score-chart {
   display: grid;
   grid-template-columns: repeat(8, minmax(24px, 1fr));
@@ -488,10 +525,12 @@ input:focus, textarea:focus, select:focus {
   line-height: 1.5;
 }
 
-.score-card .mini-danger-button {
+.score-card-actions {
   position: absolute;
   top: 10px;
   right: 10px;
+  display: flex;
+  gap: 6px;
 }
 
 .next-note {
@@ -506,6 +545,42 @@ input:focus, textarea:focus, select:focus {
   min-height: 210px;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.onboarding-panel {
+  gap: 14px;
+}
+
+.onboarding-steps {
+  display: grid;
+  gap: 9px;
+}
+
+.onboarding-steps div {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(216, 227, 223, .9);
+  border-radius: 12px;
+  background: #fbfaf7;
+  padding: 10px;
+}
+
+.onboarding-steps strong {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+}
+
+.onboarding-steps span {
+  color: #32443f;
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .task-list { margin-top: 12px; }
@@ -664,10 +739,12 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   }
   .today-card { grid-template-columns: 1fr; }
   .today-card .text-button { grid-column: 1; grid-row: auto; }
+  .quick-start-card { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .score-panel { grid-template-columns: 1fr; }
   .score-ring { width: 96px; height: 96px; }
   .score-illustration { right: 18px; bottom: -20px; width: 96px; height: 96px; opacity: .5; }
   .score-type-row, .score-grid { grid-template-columns: 1fr; }
+  .split-actions { grid-template-columns: 1fr; }
   .bottom-nav button { font-size: 11px; }
 }

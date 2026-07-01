@@ -55,6 +55,12 @@
           <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
         </section>
 
+        <section class="quick-start-card">
+          <button data-view-shortcut="practiceView"><span>1</span>練習指示</button>
+          <button data-view-shortcut="recordView"><span>2</span>録音する</button>
+          <button data-view-shortcut="growthView"><span>3</span>採点する</button>
+        </section>
+
         <div class="section-heading">
           <div>
             <h2>コンクール</h2>
@@ -156,8 +162,8 @@
         <section class="tool-card">
           <div class="tool-heading">
             <div>
-              <h3>採点を追加</h3>
-              <p>6項目から総合点を自動計算</p>
+              <h3 id="scoreFormTitle">採点を追加</h3>
+              <p id="scoreFormSubcopy">6項目から総合点を自動計算</p>
             </div>
             <strong class="timer-display" id="scoreTotalPreview">0点</strong>
           </div>
@@ -182,7 +188,10 @@
           </div>
           <label>総評<textarea id="scoreCommentInput" rows="3" placeholder="良かった点、直したい点"></textarea></label>
           <label>次の課題<textarea id="scoreNextInput" rows="3" placeholder="次回までにやること"></textarea></label>
-          <button class="primary-button full-button" id="addScoreButton">採点を保存</button>
+          <div class="split-actions">
+            <button class="secondary-button" id="cancelScoreEditButton" type="button">新規に戻す</button>
+            <button class="primary-button" id="addScoreButton" type="button">採点を保存</button>
+          </div>
         </section>
 
         <section class="tool-card">
@@ -235,6 +244,12 @@
         <section class="tool-card">
           <h2>ホーム画面に追加</h2>
           <p class="subcopy">iPhoneはSafariの共有ボタンから「ホーム画面に追加」。AndroidはChromeのメニューから「アプリをインストール」または「ホーム画面に追加」を選びます。</p>
+        </section>
+
+        <section class="tool-card">
+          <h2>初回案内</h2>
+          <p class="subcopy">試用者に説明するときは、最初の案内をもう一度表示できます。</p>
+          <button id="showOnboardingButton" class="secondary-button full-button">初回案内を見る</button>
         </section>
       </section>
     </main>
@@ -297,6 +312,24 @@
         <button type="submit" class="primary-button">保存</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="onboardingDialog">
+    <div class="dialog-panel onboarding-panel">
+      <div class="reminder-mark">♪</div>
+      <p class="eyebrow">First step</p>
+      <h2>まずは3つだけ登録します</h2>
+      <div class="onboarding-steps">
+        <div><strong>1</strong><span>コンクール締切を入れる</span></div>
+        <div><strong>2</strong><span>先生の練習指示を入れる</span></div>
+        <div><strong>3</strong><span>録音して、採点を残す</span></div>
+      </div>
+      <p class="subcopy">データと録音はこの端末内に保存されます。外部送信や月額サービスは使いません。</p>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="closeOnboardingButton">閉じる</button>
+        <button class="primary-button" id="startOnboardingButton">練習から始める</button>
+      </div>
+    </div>
   </dialog>
 
   <script src="app.js"></script>
