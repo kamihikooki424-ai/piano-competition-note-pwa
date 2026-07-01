@@ -336,7 +336,7 @@ function renderRecordings() {
     return;
   }
   els.recordingList.innerHTML = state.recordings.map((recording) => `
-    <article class="recording-card ${recording.favorite ? "favorite" : ""}">
+    <article class="recording-card ${recording.favorite ? "favorite" : ""} ${recording.saved ? "saved" : ""}">
       <div class="recording-head">
         <div>
           <h3>${escapeHtml(recording.name)}</h3>
@@ -344,13 +344,14 @@ function renderRecordings() {
         </div>
         <div class="recording-actions">
           <button class="mini-action-button" data-favorite-recording="${recording.id}">${recording.favorite ? "大切" : "通常"}</button>
+          <button class="mini-action-button ${recording.saved ? "saved" : ""}" data-saved-recording="${recording.id}">${recording.saved ? "保存済み" : "未保存"}</button>
           <button class="mini-action-button" data-rename-recording="${recording.id}">名前</button>
           <button class="mini-danger-button" data-delete-recording="${recording.id}">削除</button>
         </div>
       </div>
       <audio controls src="${recording.url}"></audio>
       <textarea class="recording-memo" data-recording-memo="${recording.id}" rows="2" placeholder="先生に聞いてほしい所、弾き直したい所など">${escapeHtml(recording.memo || "")}</textarea>
-      <a class="download-link" href="${recording.url}" download="${escapeHtml(recording.name)}.webm">端末に保存</a>
+      <a class="download-link" href="${recording.url}" download="${escapeHtml(recording.name)}.webm" data-save-recording="${recording.id}">端末に保存</a>
     </article>
   `).join("");
 
@@ -360,6 +361,14 @@ function renderRecordings() {
 
   $$("[data-rename-recording]").forEach((button) => {
     button.addEventListener("click", () => renameRecording(button.dataset.renameRecording));
+  });
+
+  $$("[data-saved-recording]").forEach((button) => {
+    button.addEventListener("click", () => toggleRecordingSaved(button.dataset.savedRecording));
+  });
+
+  $$("[data-save-recording]").forEach((link) => {
+    link.addEventListener("click", () => setTimeout(() => markRecordingSaved(link.dataset.saveRecording), 0));
   });
 
   $$("[data-recording-memo]").forEach((textarea) => {
@@ -963,7 +972,8 @@ async function toggleRecording() {
         createdAtMs: Date.now(),
         duration: formatDuration(seconds),
         memo: "",
-        favorite: false
+        favorite: false,
+        saved: false
       };
       await saveRecordingToDb(recording);
       const url = URL.createObjectURL(blob);
@@ -976,7 +986,8 @@ async function toggleRecording() {
         createdAtMs: recording.createdAtMs,
         duration: recording.duration,
         memo: recording.memo,
-        favorite: recording.favorite
+        favorite: recording.favorite,
+        saved: recording.saved
       });
       stream.getTracks().forEach((track) => track.stop());
       els.recordMessage.textContent = "録音できました。この端末内に保存しました。";
@@ -984,6 +995,7 @@ async function toggleRecording() {
       els.recordButton.querySelector("strong").textContent = "録音";
       els.recordTimer.textContent = "0:00";
       renderRecordings();
+      renderStorageReport();
     };
     recorder.start();
   } catch {
@@ -1046,6 +1058,7 @@ async function loadRecordingsFromDb() {
         duration: recording.duration,
         memo: recording.memo || "",
         favorite: Boolean(recording.favorite),
+        saved: Boolean(recording.saved),
         blob: recording.blob,
         url: URL.createObjectURL(recording.blob)
       }));
@@ -1061,6 +1074,7 @@ async function updateRecordingInDb(id, updates) {
   if (!target) return;
   Object.assign(target, updates);
   renderRecordings();
+  renderStorageReport();
   els.teacherMemoOutput.value = buildTeacherMemo();
 
   try {
@@ -1075,7 +1089,8 @@ async function updateRecordingInDb(id, updates) {
         createdAtMs: target.createdAtMs,
         duration: target.duration,
         memo: target.memo || "",
-        favorite: Boolean(target.favorite)
+        favorite: Boolean(target.favorite),
+        saved: Boolean(target.saved)
       };
       tx.objectStore(RECORDING_STORE_NAME).put(stored);
       tx.oncomplete = resolve;
@@ -1091,6 +1106,18 @@ function toggleRecordingFavorite(id) {
   const target = state.recordings.find((recording) => recording.id === id);
   if (!target) return;
   updateRecordingInDb(id, { favorite: !target.favorite });
+}
+
+function toggleRecordingSaved(id) {
+  const target = state.recordings.find((recording) => recording.id === id);
+  if (!target) return;
+  updateRecordingInDb(id, { saved: !target.saved });
+}
+
+function markRecordingSaved(id) {
+  const target = state.recordings.find((recording) => recording.id === id);
+  if (!target || target.saved) return;
+  updateRecordingInDb(id, { saved: true });
 }
 
 function updateRecordingMemo(id, memo) {
@@ -1225,12 +1252,18 @@ function getRecordingBytes() {
   return state.recordings.reduce((sum, recording) => sum + Number(recording.blob?.size || 0), 0);
 }
 
+function getUnsavedRecordingCount() {
+  return state.recordings.filter((recording) => !recording.saved).length;
+}
+
 function getStorageReportItems() {
+  const unsavedCount = getUnsavedRecordingCount();
   return [
     ["コンクール", `${state.competitions.length}件`],
     ["練習指示", `${state.tasks.length}件`],
     ["採点", `${state.scores.length}件`],
     ["録音", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
+    ["録音保存確認", unsavedCount ? `未保存 ${unsavedCount}件` : "すべて確認済み"],
     ["試用メモ", `${state.feedbacks.length}件`],
     ["バックアップ", getBackupStatusLabel()]
   ];
@@ -1275,6 +1308,8 @@ function exportData() {
   URL.revokeObjectURL(url);
   localStorage.setItem(BACKUP_KEY, todayKey());
   renderBackupStatus();
+  renderHomeBackupNudge();
+  renderStorageReport();
 }
 
 function importData(file) {
