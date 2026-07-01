@@ -8,6 +8,7 @@ const RECORDING_STORE_NAME = "recordings";
 const state = {
   competitions: [],
   tasks: [],
+  practiceLogs: [],
   view: "homeView",
   bpm: 84,
   beat: 0,
@@ -48,6 +49,7 @@ const els = {
   backupReminderText: $("#backupReminderText"),
   competitionList: $("#competitionList"),
   taskList: $("#taskList"),
+  practiceLogList: $("#practiceLogList"),
   bpmLabel: $("#bpmLabel"),
   tempoSlider: $("#tempoSlider"),
   beatRow: $("#beatRow"),
@@ -153,6 +155,7 @@ function load() {
       const parsed = JSON.parse(saved);
       state.competitions = parsed.competitions || [];
       state.tasks = parsed.tasks || [];
+      state.practiceLogs = parsed.practiceLogs || [];
       state.scores = parsed.scores || [];
       state.feedbacks = parsed.feedbacks || [];
       state.isSampleData = Boolean(parsed.isSampleData);
@@ -184,6 +187,13 @@ function load() {
       { id: createId(), title: "左手バランス確認", detail: "左手を小さめにしてメロディを前に出す", target: 3, count: 0 },
       { id: createId(), title: "最後の4小節だけ反復", detail: "止まらず弾けるまで部分練習", target: 10, count: 0 }
     ];
+    state.practiceLogs = [{
+      id: createId(),
+      date: addDays(-1),
+      minutes: 20,
+      memo: "最後の4小節を部分練習。録音して止まる場所を確認。",
+      doneSummary: "1/3項目完了"
+    }];
   }
 
   if (!hasSavedData && state.scores.length === 0) {
@@ -225,6 +235,7 @@ function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify({
     competitions: state.competitions,
     tasks: state.tasks,
+    practiceLogs: state.practiceLogs,
     scores: state.scores,
     feedbacks: state.feedbacks,
     isSampleData: state.isSampleData,
@@ -307,6 +318,7 @@ function renderSetupCard() {
   const checks = [
     ["コンクール", state.competitions.length > 0],
     ["練習指示", state.tasks.length > 0],
+    ["練習記録", state.practiceLogs.length > 0],
     ["録音", state.recordings.length > 0],
     ["採点", state.scores.length > 0]
   ];
@@ -327,6 +339,7 @@ function renderPractice() {
   els.bpmLabel.textContent = state.bpm;
   els.tempoSlider.value = String(state.bpm);
   els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+  renderPracticeLogs();
   if (state.tasks.length === 0) {
     els.taskList.innerHTML = `<div class="notice-card"><strong>練習指示はまだありません</strong><span>先生からの宿題や家庭での練習方法を追加できます。</span></div>`;
     return;
@@ -358,6 +371,28 @@ function renderPractice() {
   $$("[data-task-plus]").forEach((button) => button.addEventListener("click", () => updateTask(button.dataset.taskPlus, 1)));
   $$("[data-task-reset]").forEach((button) => button.addEventListener("click", () => resetTask(button.dataset.taskReset)));
   $$("[data-edit-task]").forEach((button) => button.addEventListener("click", () => openTaskDialog(button.dataset.editTask)));
+}
+
+function renderPracticeLogs() {
+  if (state.practiceLogs.length === 0) {
+    els.practiceLogList.innerHTML = `<div class="notice-card"><strong>練習記録はまだありません</strong><span>練習後に時間と内容を保存すると、先生共有メモにも反映されます。</span></div>`;
+    return;
+  }
+
+  els.practiceLogList.innerHTML = [...state.practiceLogs].reverse().slice(0, 5).map((log) => `
+    <article class="practice-log-card">
+      <div>
+        <strong>${escapeHtml(formatDate(log.date))} / ${escapeHtml(log.minutes)}分</strong>
+        <span>${escapeHtml(log.doneSummary || "進み具合未記録")}</span>
+      </div>
+      <p>${escapeHtml(log.memo || "メモなし")}</p>
+      <button class="mini-danger-button" data-delete-practice-log="${log.id}">削除</button>
+    </article>
+  `).join("");
+
+  $$("[data-delete-practice-log]").forEach((button) => {
+    button.addEventListener("click", () => deletePracticeLog(button.dataset.deletePracticeLog));
+  });
 }
 
 function renderRecordings() {
@@ -538,12 +573,41 @@ function resetTask(id) {
   render();
 }
 
+function getTaskDoneSummary() {
+  if (state.tasks.length === 0) return "練習指示なし";
+  const done = state.tasks.filter((task) => task.count >= Math.max(1, Number(task.target || 1))).length;
+  return `${done}/${state.tasks.length}項目完了`;
+}
+
 function addTask() {
   const title = $("#taskTitleInput").value.trim();
   if (!title) return;
   state.isSampleData = false;
   state.tasks.unshift({ id: createId(), title, detail: "練習後に内容を具体的に書き足す", target: 5, count: 0 });
   $("#taskTitleInput").value = "";
+  save();
+  render();
+}
+
+function savePracticeLog() {
+  const minutes = Math.max(1, Math.min(240, Number($("#practiceMinutesInput").value || 15)));
+  const memo = $("#practiceLogMemoInput").value.trim();
+  state.isSampleData = false;
+  state.practiceLogs.push({
+    id: createId(),
+    date: todayKey(),
+    minutes,
+    memo,
+    doneSummary: getTaskDoneSummary()
+  });
+  $("#practiceLogMemoInput").value = "";
+  save();
+  render();
+}
+
+function deletePracticeLog(id) {
+  if (!confirm("この練習記録を削除しますか？")) return;
+  state.practiceLogs = state.practiceLogs.filter((log) => log.id !== id);
   save();
   render();
 }
@@ -728,6 +792,7 @@ function buildTeacherMemo() {
   const latestTeacherScore = getSortedScores().reverse().find((score) => score.type === "teacher");
   const latestScore = latestTeacherScore || getLatestScore();
   const openTasks = state.tasks.filter((task) => task.count < task.target).slice(0, 5);
+  const recentPracticeLogs = [...state.practiceLogs].reverse().slice(0, 3);
   const importantRecordings = state.recordings.filter((recording) => recording.favorite).slice(0, 3);
   const recentRecordings = importantRecordings.length ? importantRecordings : state.recordings.slice(0, 3);
 
@@ -752,6 +817,11 @@ function buildTeacherMemo() {
       ? openTasks.map((task) => `・${task.title}：${task.count}/${task.target}回 - ${task.detail || "詳細なし"}`)
       : ["完了済み、または未登録"]),
     "",
+    "■ 最近の練習記録",
+    ...(recentPracticeLogs.length
+      ? recentPracticeLogs.map((log) => `・${formatDate(log.date)}：${log.minutes}分 / ${log.doneSummary || "進み具合未記録"} / ${log.memo || "メモなし"}`)
+      : ["練習記録未登録"]),
+    "",
     "■ 録音メモ",
     ...(recentRecordings.length
       ? recentRecordings.map((recording) => `・${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`)
@@ -769,6 +839,7 @@ function buildTeacherReviewRequest() {
     .sort((a, b) => (daysUntil(a.eventDate) ?? 9999) - (daysUntil(b.eventDate) ?? 9999))[0];
   const latestScore = getLatestScore();
   const nextTask = state.tasks.find((task) => task.count < task.target);
+  const latestPracticeLog = state.practiceLogs.at(-1);
   const recording = state.recordings.find((item) => item.favorite) || state.recordings[0];
   const competitionLine = nextCompetition
     ? `${nextCompetition.name} ${nextCompetition.division || ""} / 本番 ${formatDate(nextCompetition.eventDate)}`
@@ -779,6 +850,9 @@ function buildTeacherReviewRequest() {
   const taskLine = nextTask
     ? `${nextTask.title}：${nextTask.count}/${nextTask.target}回 - ${nextTask.detail || "詳細なし"}`
     : "未完了課題なし";
+  const practiceLine = latestPracticeLog
+    ? `${formatDate(latestPracticeLog.date)} ${latestPracticeLog.minutes}分 - ${latestPracticeLog.memo || latestPracticeLog.doneSummary || "メモなし"}`
+    : "練習記録未登録";
   const recordingLine = recording
     ? `${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
     : "録音は別途送ります";
@@ -789,6 +863,7 @@ function buildTeacherReviewRequest() {
     `コンクール：${competitionLine}`,
     `確認してほしい録音：${recordingLine}`,
     `最近の採点：${scoreLine}`,
+    `直近の練習：${practiceLine}`,
     `今の練習課題：${taskLine}`,
     "",
     "見ていただきたいこと：",
@@ -965,6 +1040,7 @@ function startPersonalSetup() {
   if (state.isSampleData) {
     state.competitions = [];
     state.tasks = [];
+    state.practiceLogs = [];
     state.scores = [];
     state.feedbacks = [];
     state.isSampleData = false;
@@ -1358,6 +1434,7 @@ function getStorageReportItems() {
   return [
     ["コンクール", `${state.competitions.length}件`],
     ["練習指示", `${state.tasks.length}件`],
+    ["練習記録", `${state.practiceLogs.length}件`],
     ["採点", `${state.scores.length}件`],
     ["録音", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
     ["録音保存確認", unsavedCount ? `未保存 ${unsavedCount}件` : "すべて確認済み"],
@@ -1392,6 +1469,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify({
     competitions: state.competitions,
     tasks: state.tasks,
+    practiceLogs: state.practiceLogs,
     scores: state.scores,
     feedbacks: state.feedbacks,
     isSampleData: state.isSampleData,
@@ -1418,6 +1496,7 @@ function importData(file) {
       const data = JSON.parse(String(reader.result));
       state.competitions = Array.isArray(data.competitions) ? data.competitions : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      state.practiceLogs = Array.isArray(data.practiceLogs) ? data.practiceLogs : [];
       state.scores = Array.isArray(data.scores) ? data.scores : [];
       state.feedbacks = Array.isArray(data.feedbacks) ? data.feedbacks : [];
       state.isSampleData = Boolean(data.isSampleData);
@@ -1458,6 +1537,7 @@ async function clearAllData() {
 
   state.competitions = [];
   state.tasks = [];
+  state.practiceLogs = [];
   state.scores = [];
   state.feedbacks = [];
   state.isSampleData = false;
@@ -1486,6 +1566,7 @@ function bind() {
   els.timerStartButton.addEventListener("click", togglePracticeTimer);
   els.timerResetButton.addEventListener("click", resetPracticeTimer);
   $("#addTaskButton").addEventListener("click", addTask);
+  $("#savePracticeLogButton").addEventListener("click", savePracticeLog);
   $("#closeTaskDialog").addEventListener("click", () => els.taskDialog.close());
   els.taskForm.addEventListener("submit", saveTask);
   $("#deleteTaskButton").addEventListener("click", deleteTask);

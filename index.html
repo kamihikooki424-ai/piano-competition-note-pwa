@@ -146,6 +146,21 @@
           </div>
           <div id="taskList" class="task-list"></div>
         </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>今日の練習記録</h3>
+              <p>何分・何を練習したかを残す</p>
+            </div>
+          </div>
+          <div class="practice-log-form">
+            <label>練習時間<input id="practiceMinutesInput" type="number" min="1" max="240" value="15">分</label>
+            <label>今日やったこと<textarea id="practiceLogMemoInput" rows="3" placeholder="例：右手だけ、最後の4小節、録音して聴き返し"></textarea></label>
+            <button class="primary-button" id="savePracticeLogButton" type="button">今日の練習を保存</button>
+          </div>
+          <div id="practiceLogList" class="practice-log-list"></div>
+        </section>
       </section>
 
       <section class="view" id="recordView">
