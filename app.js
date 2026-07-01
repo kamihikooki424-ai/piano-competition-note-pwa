@@ -1,5 +1,6 @@
 const STORE_KEY = "piano-note-zero-cost-v1";
 const REMINDER_KEY = "piano-note-reminders-v1";
+const BACKUP_KEY = "piano-note-last-backup-v1";
 const RECORDING_DB_NAME = "piano-note-recordings-v1";
 const RECORDING_STORE_NAME = "recordings";
 
@@ -16,7 +17,10 @@ const state = {
   recordingStartedAt: 0,
   recordingSeconds: 0,
   recordingTimer: null,
-  recordings: []
+  recordings: [],
+  practiceTimerSeconds: 15 * 60,
+  practiceTimerRemaining: 15 * 60,
+  practiceTimerId: null
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -28,18 +32,25 @@ const els = {
   competitionCount: $("#competitionCount"),
   urgentCount: $("#urgentCount"),
   taskDoneCount: $("#taskDoneCount"),
+  todayPracticeLabel: $("#todayPracticeLabel"),
+  backupReminderText: $("#backupReminderText"),
   competitionList: $("#competitionList"),
   taskList: $("#taskList"),
   bpmLabel: $("#bpmLabel"),
   tempoSlider: $("#tempoSlider"),
   beatRow: $("#beatRow"),
   metronomeButton: $("#metronomeButton"),
+  practiceTimerLabel: $("#practiceTimerLabel"),
+  timerStartButton: $("#timerStartButton"),
+  timerResetButton: $("#timerResetButton"),
   recordButton: $("#recordButton"),
   recordMessage: $("#recordMessage"),
   recordTimer: $("#recordTimer"),
   recordingList: $("#recordingList"),
   competitionDialog: $("#competitionDialog"),
   competitionForm: $("#competitionForm"),
+  taskDialog: $("#taskDialog"),
+  taskForm: $("#taskForm"),
   reminderDialog: $("#reminderDialog"),
   reminderKicker: $("#reminderKicker"),
   reminderTitle: $("#reminderTitle"),
@@ -118,6 +129,8 @@ function load() {
       state.competitions = parsed.competitions || [];
       state.tasks = parsed.tasks || [];
       state.bpm = parsed.bpm || 84;
+      state.practiceTimerSeconds = Number(parsed.practiceTimerSeconds || 15 * 60);
+      state.practiceTimerRemaining = state.practiceTimerSeconds;
     } catch {
       localStorage.removeItem(STORE_KEY);
     }
@@ -149,7 +162,8 @@ function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify({
     competitions: state.competitions,
     tasks: state.tasks,
-    bpm: state.bpm
+    bpm: state.bpm,
+    practiceTimerSeconds: state.practiceTimerSeconds
   }));
 }
 
@@ -157,6 +171,7 @@ function render() {
   renderHome();
   renderPractice();
   renderRecordings();
+  renderBackupStatus();
 }
 
 function renderHome() {
@@ -176,6 +191,10 @@ function renderHome() {
     return days !== null && days >= 0 && days <= 3;
   }).length;
   els.taskDoneCount.textContent = `${state.tasks.filter((task) => task.count >= task.target).length}/${state.tasks.length}`;
+  const nextTask = state.tasks.find((task) => task.count < task.target);
+  els.todayPracticeLabel.textContent = nextTask
+    ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
+    : "今日の練習指示は完了です。録音して聴き返しましょう。";
 
   if (state.competitions.length === 0) {
     els.competitionList.innerHTML = `<div class="notice-card"><strong>まだ登録がありません</strong><span>右上の＋からコンクールを追加できます。</span></div>`;
@@ -212,8 +231,10 @@ function renderHome() {
 function renderPractice() {
   els.bpmLabel.textContent = state.bpm;
   els.tempoSlider.value = String(state.bpm);
+  els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
   els.taskList.innerHTML = state.tasks.map((task) => {
-    const percent = Math.min(100, Math.round((task.count / task.target) * 100));
+    const target = Math.max(1, Number(task.target || 1));
+    const percent = Math.min(100, Math.round((task.count / target) * 100));
     return `
       <article class="task-card">
         <div class="task-card-head">
@@ -221,7 +242,7 @@ function renderPractice() {
             <h3>${escapeHtml(task.title)}</h3>
             <p>先生の指示：${escapeHtml(task.detail)}</p>
           </div>
-          <strong class="task-count">${task.count}/${task.target}</strong>
+          <strong class="task-count">${task.count}/${target}</strong>
         </div>
         <div class="progress"><span style="width:${percent}%"></span></div>
         <div class="counter-row">
@@ -229,6 +250,7 @@ function renderPractice() {
           <button data-task-plus="${task.id}">できた</button>
           <button data-task-reset="${task.id}">0</button>
         </div>
+        <button class="text-button task-edit-button" data-edit-task="${task.id}">指示を編集</button>
       </article>
     `;
   }).join("");
@@ -236,6 +258,7 @@ function renderPractice() {
   $$("[data-task-minus]").forEach((button) => button.addEventListener("click", () => updateTask(button.dataset.taskMinus, -1)));
   $$("[data-task-plus]").forEach((button) => button.addEventListener("click", () => updateTask(button.dataset.taskPlus, 1)));
   $$("[data-task-reset]").forEach((button) => button.addEventListener("click", () => resetTask(button.dataset.taskReset)));
+  $$("[data-edit-task]").forEach((button) => button.addEventListener("click", () => openTaskDialog(button.dataset.editTask)));
 }
 
 function renderRecordings() {
@@ -244,18 +267,30 @@ function renderRecordings() {
     return;
   }
   els.recordingList.innerHTML = state.recordings.map((recording) => `
-    <article class="recording-card">
+    <article class="recording-card ${recording.favorite ? "favorite" : ""}">
       <div class="recording-head">
         <div>
           <h3>${escapeHtml(recording.name)}</h3>
           <p class="subcopy">${escapeHtml(recording.createdAt)} / ${escapeHtml(recording.duration)}</p>
         </div>
-        <button class="mini-danger-button" data-delete-recording="${recording.id}">削除</button>
+        <div class="recording-actions">
+          <button class="mini-action-button" data-favorite-recording="${recording.id}">${recording.favorite ? "大切" : "通常"}</button>
+          <button class="mini-danger-button" data-delete-recording="${recording.id}">削除</button>
+        </div>
       </div>
       <audio controls src="${recording.url}"></audio>
+      <textarea class="recording-memo" data-recording-memo="${recording.id}" rows="2" placeholder="先生に聞いてほしい所、弾き直したい所など">${escapeHtml(recording.memo || "")}</textarea>
       <a class="download-link" href="${recording.url}" download="${escapeHtml(recording.name)}.webm">端末に保存</a>
     </article>
   `).join("");
+
+  $$("[data-favorite-recording]").forEach((button) => {
+    button.addEventListener("click", () => toggleRecordingFavorite(button.dataset.favoriteRecording));
+  });
+
+  $$("[data-recording-memo]").forEach((textarea) => {
+    textarea.addEventListener("change", () => updateRecordingMemo(textarea.dataset.recordingMemo, textarea.value));
+  });
 
   $$("[data-delete-recording]").forEach((button) => {
     button.addEventListener("click", () => deleteRecording(button.dataset.deleteRecording));
@@ -325,6 +360,78 @@ function addTask() {
   $("#taskTitleInput").value = "";
   save();
   render();
+}
+
+function openTaskDialog(id) {
+  const task = state.tasks.find((item) => item.id === id);
+  if (!task) return;
+  $("#taskId").value = task.id;
+  $("#taskTitleEdit").value = task.title || "";
+  $("#taskDetailEdit").value = task.detail || "";
+  $("#taskTargetEdit").value = String(task.target || 5);
+  els.taskDialog.showModal();
+}
+
+function saveTask(event) {
+  event.preventDefault();
+  const id = $("#taskId").value;
+  const target = Math.max(1, Number($("#taskTargetEdit").value || 1));
+  state.tasks = state.tasks.map((task) => task.id === id ? {
+    ...task,
+    title: $("#taskTitleEdit").value.trim(),
+    detail: $("#taskDetailEdit").value.trim(),
+    target,
+    count: Math.min(task.count, target)
+  } : task);
+  save();
+  els.taskDialog.close();
+  render();
+}
+
+function deleteTask() {
+  const id = $("#taskId").value;
+  state.tasks = state.tasks.filter((task) => task.id !== id);
+  save();
+  els.taskDialog.close();
+  render();
+}
+
+function setPracticeTimer(minutes) {
+  stopPracticeTimer();
+  state.practiceTimerSeconds = minutes * 60;
+  state.practiceTimerRemaining = state.practiceTimerSeconds;
+  save();
+  renderPractice();
+}
+
+function stopPracticeTimer() {
+  if (state.practiceTimerId) {
+    clearInterval(state.practiceTimerId);
+    state.practiceTimerId = null;
+  }
+  els.timerStartButton.textContent = "開始";
+}
+
+function togglePracticeTimer() {
+  if (state.practiceTimerId) {
+    stopPracticeTimer();
+    return;
+  }
+  els.timerStartButton.textContent = "一時停止";
+  state.practiceTimerId = setInterval(() => {
+    state.practiceTimerRemaining = Math.max(0, state.practiceTimerRemaining - 1);
+    els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+    if (state.practiceTimerRemaining === 0) {
+      stopPracticeTimer();
+      els.practiceTimerLabel.textContent = "できた！";
+    }
+  }, 1000);
+}
+
+function resetPracticeTimer() {
+  stopPracticeTimer();
+  state.practiceTimerRemaining = state.practiceTimerSeconds;
+  renderPractice();
 }
 
 function setView(viewId) {
@@ -417,16 +524,23 @@ async function toggleRecording() {
         blob,
         name: `練習録音 ${state.recordings.length + 1}`,
         createdAt: new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date()),
-        duration: formatDuration(seconds)
+        createdAtMs: Date.now(),
+        duration: formatDuration(seconds),
+        memo: "",
+        favorite: false
       };
       await saveRecordingToDb(recording);
       const url = URL.createObjectURL(blob);
       state.recordings.unshift({
         id: recording.id,
         url,
+        blob,
         name: recording.name,
         createdAt: recording.createdAt,
-        duration: recording.duration
+        createdAtMs: recording.createdAtMs,
+        duration: recording.duration,
+        memo: recording.memo,
+        favorite: recording.favorite
       });
       stream.getTracks().forEach((track) => track.stop());
       els.recordMessage.textContent = "録音できました。この端末内に保存しました。";
@@ -487,12 +601,16 @@ async function loadRecordingsFromDb() {
     db.close();
     state.recordings.forEach((recording) => URL.revokeObjectURL(recording.url));
     state.recordings = stored
-      .sort((a, b) => String(b.id).localeCompare(String(a.id)))
+      .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
       .map((recording) => ({
         id: recording.id,
         name: recording.name,
         createdAt: recording.createdAt,
+        createdAtMs: recording.createdAtMs || 0,
         duration: recording.duration,
+        memo: recording.memo || "",
+        favorite: Boolean(recording.favorite),
+        blob: recording.blob,
         url: URL.createObjectURL(recording.blob)
       }));
     renderRecordings();
@@ -501,7 +619,48 @@ async function loadRecordingsFromDb() {
   }
 }
 
+async function updateRecordingInDb(id, updates) {
+  const target = state.recordings.find((recording) => recording.id === id);
+  if (!target) return;
+  Object.assign(target, updates);
+  renderRecordings();
+
+  try {
+    const db = await openRecordingDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDING_STORE_NAME, "readwrite");
+      const stored = {
+        id: target.id,
+        blob: target.blob,
+        name: target.name,
+        createdAt: target.createdAt,
+        createdAtMs: target.createdAtMs,
+        duration: target.duration,
+        memo: target.memo || "",
+        favorite: Boolean(target.favorite)
+      };
+      tx.objectStore(RECORDING_STORE_NAME).put(stored);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch {
+    els.recordMessage.textContent = "録音メモの保存に失敗しました。";
+  }
+}
+
+function toggleRecordingFavorite(id) {
+  const target = state.recordings.find((recording) => recording.id === id);
+  if (!target) return;
+  updateRecordingInDb(id, { favorite: !target.favorite });
+}
+
+function updateRecordingMemo(id, memo) {
+  updateRecordingInDb(id, { memo });
+}
+
 async function deleteRecording(id) {
+  if (!confirm("この録音を削除しますか？")) return;
   const target = state.recordings.find((recording) => recording.id === id);
   if (target) URL.revokeObjectURL(target.url);
   state.recordings = state.recordings.filter((recording) => recording.id !== id);
@@ -571,14 +730,34 @@ function confirmReminder() {
   els.reminderDialog.close();
 }
 
+function renderBackupStatus() {
+  const lastBackup = localStorage.getItem(BACKUP_KEY);
+  if (!lastBackup) {
+    els.backupReminderText.textContent = "まだバックアップがありません。設定から一度書き出しておくと、機種変更時に復元できます。";
+    return;
+  }
+  const days = daysUntil(lastBackup);
+  const elapsed = days === null ? null : Math.abs(days);
+  els.backupReminderText.textContent = elapsed !== null && elapsed <= 7
+    ? `最終バックアップ：${formatDate(lastBackup)}。最近のバックアップがあります。`
+    : `最終バックアップ：${formatDate(lastBackup)}。1週間以上たつ場合は書き出しをおすすめします。`;
+}
+
 function exportData() {
-  const blob = new Blob([JSON.stringify({ competitions: state.competitions, tasks: state.tasks, bpm: state.bpm }, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({
+    competitions: state.competitions,
+    tasks: state.tasks,
+    bpm: state.bpm,
+    practiceTimerSeconds: state.practiceTimerSeconds
+  }, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = `piano-note-backup-${todayKey()}.json`;
   link.click();
   URL.revokeObjectURL(url);
+  localStorage.setItem(BACKUP_KEY, todayKey());
+  renderBackupStatus();
 }
 
 function importData(file) {
@@ -590,6 +769,8 @@ function importData(file) {
       state.competitions = Array.isArray(data.competitions) ? data.competitions : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
       state.bpm = Number(data.bpm || 84);
+      state.practiceTimerSeconds = Number(data.practiceTimerSeconds || state.practiceTimerSeconds);
+      state.practiceTimerRemaining = state.practiceTimerSeconds;
       save();
       render();
       alert("バックアップを読み込みました。");
@@ -600,22 +781,64 @@ function importData(file) {
   reader.readAsText(file);
 }
 
+async function clearAllData() {
+  if (!confirm("この端末内のコンクール、練習、録音をすべて削除しますか？")) return;
+  localStorage.removeItem(STORE_KEY);
+  localStorage.removeItem(REMINDER_KEY);
+  localStorage.removeItem(BACKUP_KEY);
+  state.recordings.forEach((recording) => URL.revokeObjectURL(recording.url));
+  state.recordings = [];
+
+  try {
+    const db = await openRecordingDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDING_STORE_NAME, "readwrite");
+      tx.objectStore(RECORDING_STORE_NAME).clear();
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch {
+    // IndexedDB未対応でもlocalStorage側は削除済みなので続行します。
+  }
+
+  state.competitions = [];
+  state.tasks = [];
+  state.bpm = 84;
+  state.practiceTimerSeconds = 15 * 60;
+  state.practiceTimerRemaining = state.practiceTimerSeconds;
+  load();
+  save();
+  render();
+  els.recordMessage.textContent = "端末内データを削除しました。";
+}
+
 function bind() {
   $("#openCompetitionButton").addEventListener("click", () => openCompetitionDialog());
   $("#closeCompetitionDialog").addEventListener("click", () => els.competitionDialog.close());
   els.competitionForm.addEventListener("submit", saveCompetition);
   $("#deleteCompetitionButton").addEventListener("click", deleteCompetition);
   $$(".bottom-nav button").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
+  $$("[data-view-shortcut]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.viewShortcut)));
   els.metronomeButton.addEventListener("click", startMetronome);
   $("#tempoDown").addEventListener("click", () => changeTempo(state.bpm - 2));
   $("#tempoUp").addEventListener("click", () => changeTempo(state.bpm + 2));
   els.tempoSlider.addEventListener("input", (event) => changeTempo(Number(event.target.value)));
+  $$("[data-timer-minutes]").forEach((button) => {
+    button.addEventListener("click", () => setPracticeTimer(Number(button.dataset.timerMinutes)));
+  });
+  els.timerStartButton.addEventListener("click", togglePracticeTimer);
+  els.timerResetButton.addEventListener("click", resetPracticeTimer);
   $("#addTaskButton").addEventListener("click", addTask);
+  $("#closeTaskDialog").addEventListener("click", () => els.taskDialog.close());
+  els.taskForm.addEventListener("submit", saveTask);
+  $("#deleteTaskButton").addEventListener("click", deleteTask);
   els.recordButton.addEventListener("click", toggleRecording);
   $("#confirmReminderButton").addEventListener("click", confirmReminder);
   $("#laterReminderButton").addEventListener("click", () => els.reminderDialog.close());
   $("#exportButton").addEventListener("click", exportData);
   $("#importInput").addEventListener("change", (event) => importData(event.target.files[0]));
+  $("#clearDataButton").addEventListener("click", clearAllData);
 }
 
 if ("serviceWorker" in navigator) {

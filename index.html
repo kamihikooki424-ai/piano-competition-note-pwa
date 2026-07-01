@@ -31,6 +31,7 @@
             <h2 id="nextDeadlineLabel">次の締切を確認中</h2>
             <p>コンクール、先生の練習指示、録音を端末内に保存します。</p>
           </div>
+          <img class="hero-illustration" src="assets/piano-practice-illustration.webp" alt="" aria-hidden="true">
           <div class="hero-keyboard" aria-hidden="true">
             <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
           </div>
@@ -45,6 +46,12 @@
         <section class="notice-card">
           <strong>完全無料モード</strong>
           <span>データはこのスマホ内に保存されます。サーバー、DB、月額課金は使いません。</span>
+        </section>
+
+        <section class="today-card">
+          <strong>今日の練習</strong>
+          <span id="todayPracticeLabel">練習指示を確認中</span>
+          <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
         </section>
 
         <div class="section-heading">
@@ -85,6 +92,25 @@
         <section class="tool-card">
           <div class="tool-heading">
             <div>
+              <h3>練習タイマー</h3>
+              <p>短い集中練習を記録</p>
+            </div>
+            <strong class="timer-display" id="practiceTimerLabel">15:00</strong>
+          </div>
+          <div class="timer-actions">
+            <button class="secondary-button" data-timer-minutes="10">10分</button>
+            <button class="secondary-button" data-timer-minutes="15">15分</button>
+            <button class="secondary-button" data-timer-minutes="30">30分</button>
+          </div>
+          <div class="timer-actions">
+            <button class="pill-button" id="timerStartButton">開始</button>
+            <button class="secondary-button" id="timerResetButton">リセット</button>
+          </div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
               <h3>先生の練習指示</h3>
               <p>できた回数を記録</p>
             </div>
@@ -116,6 +142,11 @@
       </section>
 
       <section class="view" id="settingsView">
+        <section class="notice-card" id="backupReminderCard">
+          <strong>バックアップ確認</strong>
+          <span id="backupReminderText">バックアップ状況を確認中です。</span>
+        </section>
+
         <section class="notice-card">
           <strong>公開されるもの / されないもの</strong>
           <span>このアプリのコードはpublicリポジトリで公開されています。入力したコンクール情報、練習回数、録音データはGitHubへ送られず、この端末内に保存されます。</span>
@@ -130,7 +161,13 @@
               バックアップを読み込む
               <input id="importInput" type="file" accept="application/json">
             </label>
+            <button id="clearDataButton" class="danger-button danger-full">すべての端末内データを削除</button>
           </div>
+        </section>
+
+        <section class="tool-card">
+          <h2>ホーム画面に追加</h2>
+          <p class="subcopy">iPhoneはSafariの共有ボタンから「ホーム画面に追加」。AndroidはChromeのメニューから「アプリをインストール」または「ホーム画面に追加」を選びます。</p>
         </section>
       </section>
     </main>
@@ -175,6 +212,23 @@
         <button class="primary-button" id="confirmReminderButton">確認した</button>
       </div>
     </div>
+  </dialog>
+
+  <dialog id="taskDialog">
+    <form method="dialog" id="taskForm" class="dialog-panel">
+      <div class="dialog-heading">
+        <h2>練習指示を編集</h2>
+        <button type="button" id="closeTaskDialog">閉じる</button>
+      </div>
+      <input type="hidden" id="taskId">
+      <label>タイトル<input id="taskTitleEdit" required placeholder="右手だけ5回"></label>
+      <label>先生の指示<textarea id="taskDetailEdit" rows="3" placeholder="ゆっくり、音をそろえる"></textarea></label>
+      <label>目標回数<input id="taskTargetEdit" inputmode="numeric" placeholder="5"></label>
+      <div class="dialog-actions">
+        <button type="button" class="danger-button" id="deleteTaskButton">削除</button>
+        <button type="submit" class="primary-button">保存</button>
+      </div>
+    </form>
   </dialog>
 
   <script src="app.js"></script>
