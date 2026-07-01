@@ -66,6 +66,7 @@ const els = {
   scoreChart: $("#scoreChart"),
   scoreList: $("#scoreList"),
   teacherMemoOutput: $("#teacherMemoOutput"),
+  teacherReviewOutput: $("#teacherReviewOutput"),
   trialInviteOutput: $("#trialInviteOutput"),
   feedbackList: $("#feedbackList"),
   storageReport: $("#storageReport"),
@@ -436,6 +437,7 @@ function renderGrowth() {
     els.scoreChart.innerHTML = `<div class="notice-card"><strong>採点はまだありません</strong><span>上のフォームから先生・保護者の採点を保存できます。</span></div>`;
     els.scoreList.innerHTML = "";
     els.teacherMemoOutput.value = buildTeacherMemo();
+    els.teacherReviewOutput.value = buildTeacherReviewRequest();
     return;
   }
 
@@ -470,6 +472,7 @@ function renderGrowth() {
     button.addEventListener("click", () => deleteScore(button.dataset.deleteScore));
   });
   els.teacherMemoOutput.value = buildTeacherMemo();
+  els.teacherReviewOutput.value = buildTeacherReviewRequest();
 }
 
 function formatShortDate(value) {
@@ -760,6 +763,46 @@ function buildTeacherMemo() {
   return lines.filter((line) => line !== "").join("\n");
 }
 
+function buildTeacherReviewRequest() {
+  const nextCompetition = [...state.competitions]
+    .filter((competition) => daysUntil(competition.eventDate) === null || daysUntil(competition.eventDate) >= 0)
+    .sort((a, b) => (daysUntil(a.eventDate) ?? 9999) - (daysUntil(b.eventDate) ?? 9999))[0];
+  const latestScore = getLatestScore();
+  const nextTask = state.tasks.find((task) => task.count < task.target);
+  const recording = state.recordings.find((item) => item.favorite) || state.recordings[0];
+  const competitionLine = nextCompetition
+    ? `${nextCompetition.name} ${nextCompetition.division || ""} / 本番 ${formatDate(nextCompetition.eventDate)}`
+    : "コンクール未登録";
+  const scoreLine = latestScore
+    ? `${formatDate(latestScore.date)} ${latestScore.total}点（${scoreTypeLabel(latestScore.type)}）`
+    : "採点未登録";
+  const taskLine = nextTask
+    ? `${nextTask.title}：${nextTask.count}/${nextTask.target}回 - ${nextTask.detail || "詳細なし"}`
+    : "未完了課題なし";
+  const recordingLine = recording
+    ? `${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
+    : "録音は別途送ります";
+
+  return [
+    "先生、録音チェックをお願いします。",
+    "",
+    `コンクール：${competitionLine}`,
+    `確認してほしい録音：${recordingLine}`,
+    `最近の採点：${scoreLine}`,
+    `今の練習課題：${taskLine}`,
+    "",
+    "見ていただきたいこと：",
+    "1. 本番までに優先して直す点",
+    "2. 次回までの練習メニュー",
+    "3. 点数をつけるなら現時点の目安",
+    "",
+    "先生コメント：",
+    "良い点：",
+    "直す点：",
+    "次回課題："
+  ].join("\n");
+}
+
 async function copyTeacherMemo() {
   const text = buildTeacherMemo();
   els.teacherMemoOutput.value = text;
@@ -771,6 +814,12 @@ async function copyTeacherMemo() {
     els.teacherMemoOutput.select();
     alert("コピーできない場合は、メモ欄を選択して手動でコピーしてください。");
   }
+}
+
+function copyTeacherReviewRequest() {
+  const text = buildTeacherReviewRequest();
+  els.teacherReviewOutput.value = text;
+  copyText(text, $("#copyTeacherReviewButton"));
 }
 
 function roleLabel(role) {
@@ -1110,6 +1159,7 @@ async function loadRecordingsFromDb() {
       }));
     renderRecordings();
     renderStorageReport();
+    els.teacherReviewOutput.value = buildTeacherReviewRequest();
   } catch {
     els.recordMessage.textContent = "このブラウザでは録音の端末内保存に対応していない可能性があります。";
   }
@@ -1122,6 +1172,7 @@ async function updateRecordingInDb(id, updates) {
   renderRecordings();
   renderStorageReport();
   els.teacherMemoOutput.value = buildTeacherMemo();
+  els.teacherReviewOutput.value = buildTeacherReviewRequest();
 
   try {
     const db = await openRecordingDb();
@@ -1444,6 +1495,7 @@ function bind() {
   $("#cancelScoreEditButton").addEventListener("click", resetScoreForm);
   $("#addScoreButton").addEventListener("click", saveScore);
   $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
+  $("#copyTeacherReviewButton").addEventListener("click", copyTeacherReviewRequest);
   $("#copyStorageReportButton").addEventListener("click", copyStorageReport);
   $("#copyTrialInviteButton").addEventListener("click", copyTrialInvite);
   $("#saveFeedbackButton").addEventListener("click", saveFeedback);

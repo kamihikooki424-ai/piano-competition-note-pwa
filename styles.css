@@ -595,6 +595,10 @@ input:focus, textarea:focus, select:focus {
   line-height: 1.6;
 }
 
+.teacher-memo-output.compact {
+  min-height: 176px;
+}
+
 .backup-steps,
 .feedback-list {
   display: grid;
