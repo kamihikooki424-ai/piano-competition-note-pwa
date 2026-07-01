@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16332f">
+  <title>ピアノコンクールノート</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div>
+          <p class="eyebrow">Piano practice note</p>
+          <h1>ピアノコンクールノート</h1>
+        </div>
+      </div>
+      <button class="round-button" id="openCompetitionButton" aria-label="コンクールを追加">＋</button>
+    </header>
+
+    <main>
+      <section class="view active" id="homeView">
+        <section class="hero-panel">
+          <div>
+            <p id="todayLabel" class="hero-date"></p>
+            <h2 id="nextDeadlineLabel">次の締切を確認中</h2>
+            <p>コンクール、先生の練習指示、録音を端末内に保存します。</p>
+          </div>
+          <div class="hero-keyboard" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </section>
+
+        <section class="summary-grid">
+          <article><strong id="competitionCount">0</strong><span>コンクール</span></article>
+          <article><strong id="urgentCount">0</strong><span>締切間近</span></article>
+          <article><strong id="taskDoneCount">0</strong><span>練習完了</span></article>
+        </section>
+
+        <section class="notice-card">
+          <strong>完全無料モード</strong>
+          <span>データはこのスマホ内に保存されます。サーバー、DB、月額課金は使いません。</span>
+        </section>
+
+        <div class="section-heading">
+          <div>
+            <h2>コンクール</h2>
+            <p>申込締切の前日・当日にアプリ内で知らせます。</p>
+          </div>
+        </div>
+        <section id="competitionList" class="card-list"></section>
+      </section>
+
+      <section class="view" id="practiceView">
+        <section class="studio-panel">
+          <div>
+            <p class="eyebrow">Metronome</p>
+            <h2>今日の練習を刻む</h2>
+            <p>先生の指示を回数で管理します。</p>
+          </div>
+          <div class="tempo-display"><strong id="bpmLabel">84</strong><span>BPM</span></div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>メトロノーム</h3>
+              <p>拍感・テンポ練習用</p>
+            </div>
+            <button class="pill-button" id="metronomeButton">開始</button>
+          </div>
+          <div class="tempo-control">
+            <button id="tempoDown">−</button>
+            <input id="tempoSlider" type="range" min="40" max="180" value="84" aria-label="テンポ">
+            <button id="tempoUp">＋</button>
+          </div>
+          <div class="beat-row" id="beatRow"><span></span><span></span><span></span><span></span></div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>先生の練習指示</h3>
+              <p>できた回数を記録</p>
+            </div>
+          </div>
+          <div class="inline-form">
+            <input id="taskTitleInput" placeholder="例：右手だけ5回">
+            <button id="addTaskButton">追加</button>
+          </div>
+          <div id="taskList" class="task-list"></div>
+        </section>
+      </section>
+
+      <section class="view" id="recordView">
+        <section class="record-panel">
+          <p class="eyebrow">Recording</p>
+          <h2>弾いたら、すぐ聴き返す</h2>
+          <p id="recordMessage">中央のボタンで録音を開始します。</p>
+          <button id="recordButton" class="record-button" aria-label="録音を開始">
+            <span></span>
+            <strong>録音</strong>
+          </button>
+          <div id="recordTimer" class="record-timer">0:00</div>
+        </section>
+        <section class="tool-card">
+          <h3>録音一覧</h3>
+          <p class="subcopy">録音はこの画面を閉じるまで再生できます。必要な録音は保存してください。</p>
+          <div id="recordingList" class="recording-list"></div>
+        </section>
+      </section>
+
+      <section class="view" id="settingsView">
+        <section class="tool-card">
+          <h2>データ管理</h2>
+          <p class="subcopy">端末内保存なので、機種変更前はバックアップしてください。</p>
+          <div class="settings-actions">
+            <button id="exportButton" class="secondary-button">バックアップを書き出す</button>
+            <label class="secondary-button file-label">
+              バックアップを読み込む
+              <input id="importInput" type="file" accept="application/json">
+            </label>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="active" data-view="homeView">ホーム</button>
+      <button data-view="practiceView">練習</button>
+      <button data-view="recordView">録音</button>
+      <button data-view="settingsView">設定</button>
+    </nav>
+  </div>
+
+  <dialog id="competitionDialog">
+    <form method="dialog" id="competitionForm" class="dialog-panel">
+      <div class="dialog-heading">
+        <h2>コンクール登録</h2>
+        <button type="button" id="closeCompetitionDialog">閉じる</button>
+      </div>
+      <input type="hidden" id="competitionId">
+      <label>コンクール名<input id="competitionName" required placeholder="ブルグミュラーコンクール"></label>
+      <label>部門<input id="competitionDivision" placeholder="小学5・6年B部門"></label>
+      <label>申込締切日<input id="competitionDeadline" type="date" required></label>
+      <label>本番日<input id="competitionEventDate" type="date"></label>
+      <label>会場<input id="competitionVenue" placeholder="市民ホール"></label>
+      <label>参加料<input id="competitionFee" inputmode="numeric" placeholder="12000"></label>
+      <label>メモ<textarea id="competitionMemo" rows="4" placeholder="申込URL、支払い、持ち物など"></textarea></label>
+      <div class="dialog-actions">
+        <button type="button" class="danger-button" id="deleteCompetitionButton">削除</button>
+        <button type="submit" class="primary-button">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="reminderDialog">
+    <div class="dialog-panel">
+      <div class="reminder-mark">!</div>
+      <p class="eyebrow" id="reminderKicker">申込締切が明日です。</p>
+      <h2 id="reminderTitle">締切リマインド</h2>
+      <div id="reminderBody" class="reminder-body"></div>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="laterReminderButton">あとで見る</button>
+        <button class="primary-button" id="confirmReminderButton">確認した</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
