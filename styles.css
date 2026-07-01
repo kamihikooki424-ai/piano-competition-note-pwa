@@ -348,8 +348,25 @@ input:focus, textarea:focus {
 .record-button.recording span { border-radius: 8px; }
 .record-timer { margin-top: 14px; color: #fff; font-size: 30px; font-weight: 900; }
 .recording-list { margin-top: 12px; }
+.recording-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 audio { width: 100%; margin-top: 10px; }
 .download-link { display: inline-block; margin-top: 8px; color: var(--green); font-size: 12px; font-weight: 900; }
+.mini-danger-button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  border-radius: 999px;
+  background: #f8e8ea;
+  color: #a73548;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
 
 .settings-actions { display: grid; gap: 10px; margin-top: 14px; }
 .file-label { display: grid; place-items: center; }

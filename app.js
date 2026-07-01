@@ -1,5 +1,7 @@
 const STORE_KEY = "piano-note-zero-cost-v1";
 const REMINDER_KEY = "piano-note-reminders-v1";
+const RECORDING_DB_NAME = "piano-note-recordings-v1";
+const RECORDING_STORE_NAME = "recordings";
 
 const state = {
   competitions: [],
@@ -238,17 +240,26 @@ function renderPractice() {
 
 function renderRecordings() {
   if (state.recordings.length === 0) {
-    els.recordingList.innerHTML = `<div class="notice-card"><strong>録音はまだありません</strong><span>中央の録音ボタンから始めます。</span></div>`;
+    els.recordingList.innerHTML = `<div class="notice-card"><strong>録音はまだありません</strong><span>中央の録音ボタンから始めます。録音はこの端末内に保存されます。</span></div>`;
     return;
   }
   els.recordingList.innerHTML = state.recordings.map((recording) => `
     <article class="recording-card">
-      <h3>${escapeHtml(recording.name)}</h3>
-      <p class="subcopy">${escapeHtml(recording.createdAt)} / ${escapeHtml(recording.duration)}</p>
+      <div class="recording-head">
+        <div>
+          <h3>${escapeHtml(recording.name)}</h3>
+          <p class="subcopy">${escapeHtml(recording.createdAt)} / ${escapeHtml(recording.duration)}</p>
+        </div>
+        <button class="mini-danger-button" data-delete-recording="${recording.id}">削除</button>
+      </div>
       <audio controls src="${recording.url}"></audio>
       <a class="download-link" href="${recording.url}" download="${escapeHtml(recording.name)}.webm">端末に保存</a>
     </article>
   `).join("");
+
+  $$("[data-delete-recording]").forEach((button) => {
+    button.addEventListener("click", () => deleteRecording(button.dataset.deleteRecording));
+  });
 }
 
 function openCompetitionDialog(id = "") {
@@ -397,20 +408,28 @@ async function toggleRecording() {
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) state.recordingChunks.push(event.data);
     };
-    recorder.onstop = () => {
+    recorder.onstop = async () => {
       clearInterval(state.recordingTimer);
       const seconds = Math.max(1, Math.round((Date.now() - state.recordingStartedAt) / 1000));
       const blob = new Blob(state.recordingChunks, { type: recorder.mimeType || "audio/webm" });
-      const url = URL.createObjectURL(blob);
-      state.recordings.unshift({
+      const recording = {
         id: createId(),
-        url,
+        blob,
         name: `練習録音 ${state.recordings.length + 1}`,
         createdAt: new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date()),
         duration: formatDuration(seconds)
+      };
+      await saveRecordingToDb(recording);
+      const url = URL.createObjectURL(blob);
+      state.recordings.unshift({
+        id: recording.id,
+        url,
+        name: recording.name,
+        createdAt: recording.createdAt,
+        duration: recording.duration
       });
       stream.getTracks().forEach((track) => track.stop());
-      els.recordMessage.textContent = "録音できました。必要な録音は端末に保存してください。";
+      els.recordMessage.textContent = "録音できました。この端末内に保存しました。";
       els.recordButton.classList.remove("recording");
       els.recordButton.querySelector("strong").textContent = "録音";
       els.recordTimer.textContent = "0:00";
@@ -419,6 +438,86 @@ async function toggleRecording() {
     recorder.start();
   } catch {
     els.recordMessage.textContent = "マイクの許可が必要です。ブラウザの許可を確認してください。";
+  }
+}
+
+function openRecordingDb() {
+  return new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      reject(new Error("IndexedDB is not available."));
+      return;
+    }
+
+    const request = indexedDB.open(RECORDING_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(RECORDING_STORE_NAME)) {
+        db.createObjectStore(RECORDING_STORE_NAME, { keyPath: "id" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveRecordingToDb(recording) {
+  try {
+    const db = await openRecordingDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDING_STORE_NAME, "readwrite");
+      tx.objectStore(RECORDING_STORE_NAME).put(recording);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch {
+    els.recordMessage.textContent = "録音は作成できましたが、端末内保存に失敗しました。必要なら端末に保存してください。";
+  }
+}
+
+async function loadRecordingsFromDb() {
+  try {
+    const db = await openRecordingDb();
+    const stored = await new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDING_STORE_NAME, "readonly");
+      const request = tx.objectStore(RECORDING_STORE_NAME).getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    state.recordings.forEach((recording) => URL.revokeObjectURL(recording.url));
+    state.recordings = stored
+      .sort((a, b) => String(b.id).localeCompare(String(a.id)))
+      .map((recording) => ({
+        id: recording.id,
+        name: recording.name,
+        createdAt: recording.createdAt,
+        duration: recording.duration,
+        url: URL.createObjectURL(recording.blob)
+      }));
+    renderRecordings();
+  } catch {
+    els.recordMessage.textContent = "このブラウザでは録音の端末内保存に対応していない可能性があります。";
+  }
+}
+
+async function deleteRecording(id) {
+  const target = state.recordings.find((recording) => recording.id === id);
+  if (target) URL.revokeObjectURL(target.url);
+  state.recordings = state.recordings.filter((recording) => recording.id !== id);
+  renderRecordings();
+
+  try {
+    const db = await openRecordingDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(RECORDING_STORE_NAME, "readwrite");
+      tx.objectStore(RECORDING_STORE_NAME).delete(id);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch {
+    els.recordMessage.textContent = "録音一覧からは削除しましたが、端末内保存の削除確認に失敗しました。";
   }
 }
 
@@ -526,4 +625,5 @@ if ("serviceWorker" in navigator) {
 load();
 bind();
 render();
+loadRecordingsFromDb();
 setTimeout(() => checkReminders(), 300);
