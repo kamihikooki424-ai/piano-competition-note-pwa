@@ -41,6 +41,7 @@
           <article><strong id="competitionCount">0</strong><span>コンクール</span></article>
           <article><strong id="urgentCount">0</strong><span>締切間近</span></article>
           <article><strong id="taskDoneCount">0</strong><span>練習完了</span></article>
+          <article><strong id="currentScoreLabel">-</strong><span>最新点</span></article>
         </section>
 
         <section class="notice-card">
@@ -141,6 +142,72 @@
         </section>
       </section>
 
+      <section class="view" id="growthView">
+        <section class="score-panel">
+          <div>
+            <p class="eyebrow">Growth</p>
+            <h2>本番までの伸びを見る</h2>
+            <p>先生・保護者の採点を残して、点数推移と次の課題を確認します。</p>
+          </div>
+          <img class="score-illustration" src="assets/growth-trophy-illustration.webp" alt="" aria-hidden="true">
+          <div class="score-ring"><strong id="latestScoreHero">-</strong><span>最新点</span></div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>採点を追加</h3>
+              <p>6項目から総合点を自動計算</p>
+            </div>
+            <strong class="timer-display" id="scoreTotalPreview">0点</strong>
+          </div>
+          <div class="score-type-row">
+            <label>採点者
+              <select id="scoreTypeInput">
+                <option value="teacher">先生</option>
+                <option value="parent">保護者</option>
+                <option value="competition">コンクール</option>
+                <option value="ai">AI講評メモ</option>
+              </select>
+            </label>
+            <label>採点日<input id="scoreDateInput" type="date"></label>
+          </div>
+          <div class="score-grid">
+            <label>音の質・響き /25<input class="score-input" id="toneScoreInput" type="number" min="0" max="25" value="18"></label>
+            <label>拍感・テンポ /20<input class="score-input" id="tempoScoreInput" type="number" min="0" max="20" value="14"></label>
+            <label>左右バランス /15<input class="score-input" id="balanceScoreInput" type="number" min="0" max="15" value="10"></label>
+            <label>フレーズ /15<input class="score-input" id="phraseScoreInput" type="number" min="0" max="15" value="10"></label>
+            <label>曲らしさ /15<input class="score-input" id="styleScoreInput" type="number" min="0" max="15" value="10"></label>
+            <label>本番完成度 /10<input class="score-input" id="stageScoreInput" type="number" min="0" max="10" value="6"></label>
+          </div>
+          <label>総評<textarea id="scoreCommentInput" rows="3" placeholder="良かった点、直したい点"></textarea></label>
+          <label>次の課題<textarea id="scoreNextInput" rows="3" placeholder="次回までにやること"></textarea></label>
+          <button class="primary-button full-button" id="addScoreButton">採点を保存</button>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>点数推移</h3>
+              <p>最近の採点を折れ線風に表示</p>
+            </div>
+          </div>
+          <div id="scoreChart" class="score-chart"></div>
+          <div id="scoreList" class="score-list"></div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>先生に渡す共有メモ</h3>
+              <p>端末内データから文章を作成</p>
+            </div>
+            <button class="secondary-button" id="copyTeacherMemoButton">コピー</button>
+          </div>
+          <textarea id="teacherMemoOutput" class="teacher-memo-output" rows="9" readonly></textarea>
+        </section>
+      </section>
+
       <section class="view" id="settingsView">
         <section class="notice-card" id="backupReminderCard">
           <strong>バックアップ確認</strong>
@@ -176,6 +243,7 @@
       <button class="active" data-view="homeView">ホーム</button>
       <button data-view="practiceView">練習</button>
       <button data-view="recordView">録音</button>
+      <button data-view="growthView">成長</button>
       <button data-view="settingsView">設定</button>
     </nav>
   </div>

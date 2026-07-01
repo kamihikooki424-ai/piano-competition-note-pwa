@@ -18,6 +18,7 @@ const state = {
   recordingSeconds: 0,
   recordingTimer: null,
   recordings: [],
+  scores: [],
   practiceTimerSeconds: 15 * 60,
   practiceTimerRemaining: 15 * 60,
   practiceTimerId: null
@@ -32,6 +33,7 @@ const els = {
   competitionCount: $("#competitionCount"),
   urgentCount: $("#urgentCount"),
   taskDoneCount: $("#taskDoneCount"),
+  currentScoreLabel: $("#currentScoreLabel"),
   todayPracticeLabel: $("#todayPracticeLabel"),
   backupReminderText: $("#backupReminderText"),
   competitionList: $("#competitionList"),
@@ -47,6 +49,11 @@ const els = {
   recordMessage: $("#recordMessage"),
   recordTimer: $("#recordTimer"),
   recordingList: $("#recordingList"),
+  latestScoreHero: $("#latestScoreHero"),
+  scoreTotalPreview: $("#scoreTotalPreview"),
+  scoreChart: $("#scoreChart"),
+  scoreList: $("#scoreList"),
+  teacherMemoOutput: $("#teacherMemoOutput"),
   competitionDialog: $("#competitionDialog"),
   competitionForm: $("#competitionForm"),
   taskDialog: $("#taskDialog"),
@@ -123,20 +130,23 @@ function escapeHtml(value) {
 
 function load() {
   const saved = localStorage.getItem(STORE_KEY);
+  let hasSavedData = Boolean(saved);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
       state.competitions = parsed.competitions || [];
       state.tasks = parsed.tasks || [];
+      state.scores = parsed.scores || [];
       state.bpm = parsed.bpm || 84;
       state.practiceTimerSeconds = Number(parsed.practiceTimerSeconds || 15 * 60);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
     } catch {
       localStorage.removeItem(STORE_KEY);
+      hasSavedData = false;
     }
   }
 
-  if (state.competitions.length === 0) {
+  if (!hasSavedData && state.competitions.length === 0) {
     state.competitions = [{
       id: createId(),
       name: "ブルグミュラーコンクール",
@@ -149,11 +159,44 @@ function load() {
     }];
   }
 
-  if (state.tasks.length === 0) {
+  if (!hasSavedData && state.tasks.length === 0) {
     state.tasks = [
       { id: createId(), title: "ゆっくり片手練習", detail: "右手だけで音の粒をそろえる", target: 5, count: 0 },
       { id: createId(), title: "左手バランス確認", detail: "左手を小さめにしてメロディを前に出す", target: 3, count: 0 },
       { id: createId(), title: "最後の4小節だけ反復", detail: "止まらず弾けるまで部分練習", target: 10, count: 0 }
+    ];
+  }
+
+  if (!hasSavedData && state.scores.length === 0) {
+    state.scores = [
+      {
+        id: createId(),
+        date: addDays(-14),
+        type: "teacher",
+        tone: 17,
+        tempo: 13,
+        balance: 9,
+        phrase: 10,
+        style: 10,
+        stage: 6,
+        total: 65,
+        comment: "音の粒がそろってきた。テンポを急がない。",
+        next: "右手だけでゆっくり5回、最後の4小節を部分練習。"
+      },
+      {
+        id: createId(),
+        date: addDays(-4),
+        type: "parent",
+        tone: 19,
+        tempo: 15,
+        balance: 11,
+        phrase: 11,
+        style: 11,
+        stage: 7,
+        total: 74,
+        comment: "通して止まらず弾ける回数が増えた。",
+        next: "左手を小さめにして、メロディを前に出す。"
+      }
     ];
   }
 }
@@ -162,6 +205,7 @@ function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify({
     competitions: state.competitions,
     tasks: state.tasks,
+    scores: state.scores,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
   }));
@@ -171,6 +215,7 @@ function render() {
   renderHome();
   renderPractice();
   renderRecordings();
+  renderGrowth();
   renderBackupStatus();
 }
 
@@ -190,7 +235,11 @@ function renderHome() {
     const days = daysUntil(item.deadline);
     return days !== null && days >= 0 && days <= 3;
   }).length;
-  els.taskDoneCount.textContent = `${state.tasks.filter((task) => task.count >= task.target).length}/${state.tasks.length}`;
+  els.taskDoneCount.textContent = state.tasks.length
+    ? `${state.tasks.filter((task) => task.count >= task.target).length}/${state.tasks.length}`
+    : "0";
+  const latestScore = getLatestScore();
+  els.currentScoreLabel.textContent = latestScore ? `${latestScore.total}` : "-";
   const nextTask = state.tasks.find((task) => task.count < task.target);
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
@@ -232,6 +281,10 @@ function renderPractice() {
   els.bpmLabel.textContent = state.bpm;
   els.tempoSlider.value = String(state.bpm);
   els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+  if (state.tasks.length === 0) {
+    els.taskList.innerHTML = `<div class="notice-card"><strong>練習指示はまだありません</strong><span>先生からの宿題や家庭での練習方法を追加できます。</span></div>`;
+    return;
+  }
   els.taskList.innerHTML = state.tasks.map((task) => {
     const target = Math.max(1, Number(task.target || 1));
     const percent = Math.min(100, Math.round((task.count / target) * 100));
@@ -295,6 +348,68 @@ function renderRecordings() {
   $$("[data-delete-recording]").forEach((button) => {
     button.addEventListener("click", () => deleteRecording(button.dataset.deleteRecording));
   });
+}
+
+function getSortedScores() {
+  return [...state.scores].sort((a, b) => parseDate(a.date) - parseDate(b.date));
+}
+
+function getLatestScore() {
+  return getSortedScores().at(-1);
+}
+
+function scoreTypeLabel(type) {
+  return ({
+    teacher: "先生",
+    parent: "保護者",
+    competition: "コンクール",
+    ai: "AI講評メモ"
+  })[type] || "未設定";
+}
+
+function renderGrowth() {
+  const sorted = getSortedScores();
+  const latest = sorted.at(-1);
+  els.latestScoreHero.textContent = latest ? latest.total : "-";
+  updateScorePreview();
+
+  if (sorted.length === 0) {
+    els.scoreChart.innerHTML = `<div class="notice-card"><strong>採点はまだありません</strong><span>上のフォームから先生・保護者の採点を保存できます。</span></div>`;
+    els.scoreList.innerHTML = "";
+    els.teacherMemoOutput.value = buildTeacherMemo();
+    return;
+  }
+
+  els.scoreChart.innerHTML = sorted.slice(-8).map((score) => `
+    <div class="score-bar">
+      <div class="score-bar-track"><span style="height:${Math.max(4, score.total)}%"></span></div>
+      <strong>${score.total}</strong>
+      <small>${formatShortDate(score.date)}</small>
+    </div>
+  `).join("");
+
+  els.scoreList.innerHTML = [...sorted].reverse().slice(0, 6).map((score) => `
+    <article class="score-card">
+      <div>
+        <strong>${score.total}点</strong>
+        <span>${formatDate(score.date)} / ${scoreTypeLabel(score.type)}</span>
+      </div>
+      <p>${escapeHtml(score.comment || "総評なし")}</p>
+      ${score.next ? `<p class="next-note">次：${escapeHtml(score.next)}</p>` : ""}
+      <button class="mini-danger-button" data-delete-score="${score.id}">削除</button>
+    </article>
+  `).join("");
+
+  $$("[data-delete-score]").forEach((button) => {
+    button.addEventListener("click", () => deleteScore(button.dataset.deleteScore));
+  });
+  els.teacherMemoOutput.value = buildTeacherMemo();
+}
+
+function formatShortDate(value) {
+  const date = parseDate(value);
+  if (!date) return "-";
+  return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
 function openCompetitionDialog(id = "") {
@@ -432,6 +547,114 @@ function resetPracticeTimer() {
   stopPracticeTimer();
   state.practiceTimerRemaining = state.practiceTimerSeconds;
   renderPractice();
+}
+
+function clampScore(value, max) {
+  const number = Number(value || 0);
+  if (Number.isNaN(number)) return 0;
+  return Math.max(0, Math.min(max, number));
+}
+
+function getScoreFormValues() {
+  const tone = clampScore($("#toneScoreInput").value, 25);
+  const tempo = clampScore($("#tempoScoreInput").value, 20);
+  const balance = clampScore($("#balanceScoreInput").value, 15);
+  const phrase = clampScore($("#phraseScoreInput").value, 15);
+  const style = clampScore($("#styleScoreInput").value, 15);
+  const stage = clampScore($("#stageScoreInput").value, 10);
+  return {
+    tone,
+    tempo,
+    balance,
+    phrase,
+    style,
+    stage,
+    total: tone + tempo + balance + phrase + style + stage
+  };
+}
+
+function updateScorePreview() {
+  const total = getScoreFormValues().total;
+  els.scoreTotalPreview.textContent = `${total}点`;
+}
+
+function addScore() {
+  const values = getScoreFormValues();
+  const score = {
+    id: createId(),
+    date: $("#scoreDateInput").value || todayKey(),
+    type: $("#scoreTypeInput").value,
+    ...values,
+    comment: $("#scoreCommentInput").value.trim(),
+    next: $("#scoreNextInput").value.trim()
+  };
+  state.scores.push(score);
+  $("#scoreCommentInput").value = "";
+  $("#scoreNextInput").value = "";
+  save();
+  render();
+}
+
+function deleteScore(id) {
+  if (!confirm("この採点を削除しますか？")) return;
+  state.scores = state.scores.filter((score) => score.id !== id);
+  save();
+  render();
+}
+
+function buildTeacherMemo() {
+  const nextCompetition = [...state.competitions]
+    .filter((competition) => daysUntil(competition.eventDate) === null || daysUntil(competition.eventDate) >= 0)
+    .sort((a, b) => (daysUntil(a.eventDate) ?? 9999) - (daysUntil(b.eventDate) ?? 9999))[0];
+  const latestTeacherScore = getSortedScores().reverse().find((score) => score.type === "teacher");
+  const latestScore = latestTeacherScore || getLatestScore();
+  const openTasks = state.tasks.filter((task) => task.count < task.target).slice(0, 5);
+  const importantRecordings = state.recordings.filter((recording) => recording.favorite).slice(0, 3);
+  const recentRecordings = importantRecordings.length ? importantRecordings : state.recordings.slice(0, 3);
+
+  const lines = [
+    "【ピアノコンクール練習メモ】",
+    `作成日：${formatDate(todayKey())}`,
+    "",
+    "■ コンクール",
+    nextCompetition
+      ? `${nextCompetition.name} / ${nextCompetition.division || "部門未設定"} / 本番 ${formatDate(nextCompetition.eventDate)} / 申込締切 ${formatDate(nextCompetition.deadline)}`
+      : "未登録",
+    "",
+    "■ 最新採点",
+    latestScore
+      ? `${scoreTypeLabel(latestScore.type)} ${formatDate(latestScore.date)}：${latestScore.total}点`
+      : "未登録",
+    latestScore?.comment ? `総評：${latestScore.comment}` : "",
+    latestScore?.next ? `次の課題：${latestScore.next}` : "",
+    "",
+    "■ 練習指示の進み具合",
+    ...(openTasks.length
+      ? openTasks.map((task) => `・${task.title}：${task.count}/${task.target}回 - ${task.detail || "詳細なし"}`)
+      : ["完了済み、または未登録"]),
+    "",
+    "■ 録音メモ",
+    ...(recentRecordings.length
+      ? recentRecordings.map((recording) => `・${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`)
+      : ["録音未登録"]),
+    "",
+    "※録音ファイル本体はこの端末内保存です。必要な録音はアプリ内の「端末に保存」から別途共有してください。"
+  ];
+
+  return lines.filter((line) => line !== "").join("\n");
+}
+
+async function copyTeacherMemo() {
+  const text = buildTeacherMemo();
+  els.teacherMemoOutput.value = text;
+  try {
+    await navigator.clipboard.writeText(text);
+    $("#copyTeacherMemoButton").textContent = "コピー済み";
+    setTimeout(() => { $("#copyTeacherMemoButton").textContent = "コピー"; }, 1600);
+  } catch {
+    els.teacherMemoOutput.select();
+    alert("コピーできない場合は、メモ欄を選択して手動でコピーしてください。");
+  }
 }
 
 function setView(viewId) {
@@ -747,6 +970,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify({
     competitions: state.competitions,
     tasks: state.tasks,
+    scores: state.scores,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
   }, null, 2)], { type: "application/json" });
@@ -768,6 +992,7 @@ function importData(file) {
       const data = JSON.parse(String(reader.result));
       state.competitions = Array.isArray(data.competitions) ? data.competitions : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      state.scores = Array.isArray(data.scores) ? data.scores : [];
       state.bpm = Number(data.bpm || 84);
       state.practiceTimerSeconds = Number(data.practiceTimerSeconds || state.practiceTimerSeconds);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
@@ -804,10 +1029,10 @@ async function clearAllData() {
 
   state.competitions = [];
   state.tasks = [];
+  state.scores = [];
   state.bpm = 84;
   state.practiceTimerSeconds = 15 * 60;
   state.practiceTimerRemaining = state.practiceTimerSeconds;
-  load();
   save();
   render();
   els.recordMessage.textContent = "端末内データを削除しました。";
@@ -833,6 +1058,10 @@ function bind() {
   $("#closeTaskDialog").addEventListener("click", () => els.taskDialog.close());
   els.taskForm.addEventListener("submit", saveTask);
   $("#deleteTaskButton").addEventListener("click", deleteTask);
+  $$(".score-input").forEach((input) => input.addEventListener("input", updateScorePreview));
+  $("#scoreDateInput").value = todayKey();
+  $("#addScoreButton").addEventListener("click", addScore);
+  $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
   els.recordButton.addEventListener("click", toggleRecording);
   $("#confirmReminderButton").addEventListener("click", confirmReminder);
   $("#laterReminderButton").addEventListener("click", () => els.reminderDialog.close());
