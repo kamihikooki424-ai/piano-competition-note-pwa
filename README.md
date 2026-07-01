@@ -15,6 +15,10 @@
 
 GitHub Pagesで公開されたURLをスマホで開き、ホーム画面に追加します。
 
+公開URL:
+
+https://kamihikooki424-ai.github.io/piano-competition-note-pwa/
+
 ## 注意
 
 データは端末内に保存されます。機種変更や端末故障に備えて、設定画面からバックアップを書き出してください。
