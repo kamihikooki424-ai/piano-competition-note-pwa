@@ -247,6 +247,62 @@
         </section>
 
         <section class="tool-card">
+          <img class="settings-illustration" src="assets/trial-checklist-illustration.webp" alt="" aria-hidden="true">
+          <div class="tool-heading">
+            <div>
+              <h2>試用者へ送る案内</h2>
+              <p>URLと注意点をまとめてコピー</p>
+            </div>
+            <button class="secondary-button" id="copyTrialInviteButton">コピー</button>
+          </div>
+          <textarea id="trialInviteOutput" class="teacher-memo-output" rows="8" readonly></textarea>
+        </section>
+
+        <section class="tool-card">
+          <h2>バックアップ手順</h2>
+          <div class="backup-steps">
+            <div><strong>1</strong><span>設定の「バックアップを書き出す」を押す</span></div>
+            <div><strong>2</strong><span>保存されたJSONファイルをスマホ内やクラウドに保管</span></div>
+            <div><strong>3</strong><span>録音は録音カードの「端末に保存」から個別に保存</span></div>
+          </div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h2>試用フィードバック</h2>
+              <p>使ってもらった感想を端末内に記録</p>
+            </div>
+          </div>
+          <div class="feedback-form">
+            <label>試用者
+              <select id="feedbackRoleInput">
+                <option value="parent">保護者</option>
+                <option value="teacher">先生</option>
+                <option value="student">本人</option>
+              </select>
+            </label>
+            <label>評価
+              <select id="feedbackRatingInput">
+                <option value="5">5 とても良い</option>
+                <option value="4">4 良い</option>
+                <option value="3">3 ふつう</option>
+                <option value="2">2 使いにくい</option>
+                <option value="1">1 困った</option>
+              </select>
+            </label>
+            <label>良かったこと<textarea id="feedbackGoodInput" rows="2" placeholder="例：録音と課題がまとまって見やすい"></textarea></label>
+            <label>迷ったこと<textarea id="feedbackStuckInput" rows="2" placeholder="例：バックアップの場所が分かりにくい"></textarea></label>
+            <label>ほしい機能<textarea id="feedbackRequestInput" rows="2" placeholder="例：曲ごとの並び替え"></textarea></label>
+            <div class="split-actions">
+              <button class="secondary-button" id="copyFeedbackButton" type="button">まとめをコピー</button>
+              <button class="primary-button" id="saveFeedbackButton" type="button">記録する</button>
+            </div>
+          </div>
+          <div id="feedbackList" class="feedback-list"></div>
+        </section>
+
+        <section class="tool-card">
           <h2>初回案内</h2>
           <p class="subcopy">試用者に説明するときは、最初の案内をもう一度表示できます。</p>
           <button id="showOnboardingButton" class="secondary-button full-button">初回案内を見る</button>

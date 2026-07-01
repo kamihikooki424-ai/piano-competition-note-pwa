@@ -20,6 +20,7 @@ const state = {
   recordingTimer: null,
   recordings: [],
   scores: [],
+  feedbacks: [],
   editingScoreId: "",
   practiceTimerSeconds: 15 * 60,
   practiceTimerRemaining: 15 * 60,
@@ -58,6 +59,8 @@ const els = {
   scoreChart: $("#scoreChart"),
   scoreList: $("#scoreList"),
   teacherMemoOutput: $("#teacherMemoOutput"),
+  trialInviteOutput: $("#trialInviteOutput"),
+  feedbackList: $("#feedbackList"),
   onboardingDialog: $("#onboardingDialog"),
   competitionDialog: $("#competitionDialog"),
   competitionForm: $("#competitionForm"),
@@ -142,6 +145,7 @@ function load() {
       state.competitions = parsed.competitions || [];
       state.tasks = parsed.tasks || [];
       state.scores = parsed.scores || [];
+      state.feedbacks = parsed.feedbacks || [];
       state.bpm = parsed.bpm || 84;
       state.practiceTimerSeconds = Number(parsed.practiceTimerSeconds || 15 * 60);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
@@ -211,6 +215,7 @@ function save() {
     competitions: state.competitions,
     tasks: state.tasks,
     scores: state.scores,
+    feedbacks: state.feedbacks,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
   }));
@@ -221,6 +226,7 @@ function render() {
   renderPractice();
   renderRecordings();
   renderGrowth();
+  renderTrialTools();
   renderBackupStatus();
 }
 
@@ -720,6 +726,129 @@ async function copyTeacherMemo() {
   }
 }
 
+function roleLabel(role) {
+  return ({
+    parent: "保護者",
+    teacher: "先生",
+    student: "本人"
+  })[role] || "未設定";
+}
+
+function buildTrialInvite() {
+  return [
+    "【ピアノコンクールノート 試用URL】",
+    "https://kamihikooki424-ai.github.io/piano-competition-note-pwa/",
+    "",
+    "■ 使い始め",
+    "1. スマホでURLを開く",
+    "2. ホーム画面に追加する",
+    "3. コンクール締切、先生の練習指示、録音、採点を試す",
+    "",
+    "■ 注意",
+    "入力データと録音はこの端末内に保存されます。GitHubへ送信されません。",
+    "機種変更やブラウザ削除に備えて、設定からバックアップを書き出してください。",
+    "録音ファイルは録音カードの「端末に保存」から個別に保存してください。",
+    "",
+    "■ 見てほしい点",
+    "・保護者が迷わず使えるか",
+    "・先生に渡す共有メモが役に立つか",
+    "・録音と採点の流れが続けやすいか"
+  ].join("\n");
+}
+
+function renderTrialTools() {
+  els.trialInviteOutput.value = buildTrialInvite();
+
+  if (state.feedbacks.length === 0) {
+    els.feedbackList.innerHTML = `<div class="notice-card"><strong>フィードバックはまだありません</strong><span>試用してもらった感想をここに記録できます。</span></div>`;
+    return;
+  }
+
+  els.feedbackList.innerHTML = [...state.feedbacks].reverse().map((feedback) => `
+    <article class="feedback-card">
+      <div>
+        <strong>${escapeHtml(roleLabel(feedback.role))} / ${escapeHtml(feedback.rating)}点</strong>
+        <span>${escapeHtml(feedback.date)}</span>
+      </div>
+      ${feedback.good ? `<p>良かったこと：${escapeHtml(feedback.good)}</p>` : ""}
+      ${feedback.stuck ? `<p>迷ったこと：${escapeHtml(feedback.stuck)}</p>` : ""}
+      ${feedback.request ? `<p>ほしい機能：${escapeHtml(feedback.request)}</p>` : ""}
+      <button class="mini-danger-button" data-delete-feedback="${feedback.id}">削除</button>
+    </article>
+  `).join("");
+
+  $$("[data-delete-feedback]").forEach((button) => {
+    button.addEventListener("click", () => deleteFeedback(button.dataset.deleteFeedback));
+  });
+}
+
+function saveFeedback() {
+  const feedback = {
+    id: createId(),
+    date: new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date()),
+    role: $("#feedbackRoleInput").value,
+    rating: $("#feedbackRatingInput").value,
+    good: $("#feedbackGoodInput").value.trim(),
+    stuck: $("#feedbackStuckInput").value.trim(),
+    request: $("#feedbackRequestInput").value.trim()
+  };
+  state.feedbacks.push(feedback);
+  $("#feedbackGoodInput").value = "";
+  $("#feedbackStuckInput").value = "";
+  $("#feedbackRequestInput").value = "";
+  save();
+  renderTrialTools();
+}
+
+function deleteFeedback(id) {
+  if (!confirm("このフィードバックを削除しますか？")) return;
+  state.feedbacks = state.feedbacks.filter((feedback) => feedback.id !== id);
+  save();
+  renderTrialTools();
+}
+
+function buildFeedbackSummary() {
+  if (state.feedbacks.length === 0) {
+    return "試用フィードバックはまだありません。";
+  }
+  const average = state.feedbacks.reduce((sum, feedback) => sum + Number(feedback.rating || 0), 0) / state.feedbacks.length;
+  const lines = [
+    "【ピアノコンクールノート 試用フィードバック】",
+    `件数：${state.feedbacks.length}`,
+    `平均評価：${average.toFixed(1)} / 5`,
+    ""
+  ];
+  [...state.feedbacks].reverse().forEach((feedback, index) => {
+    lines.push(`${index + 1}. ${roleLabel(feedback.role)} / ${feedback.rating}点 / ${feedback.date}`);
+    if (feedback.good) lines.push(`良かったこと：${feedback.good}`);
+    if (feedback.stuck) lines.push(`迷ったこと：${feedback.stuck}`);
+    if (feedback.request) lines.push(`ほしい機能：${feedback.request}`);
+    lines.push("");
+  });
+  return lines.join("\n").trim();
+}
+
+async function copyText(text, button, doneLabel = "コピー済み") {
+  try {
+    await navigator.clipboard.writeText(text);
+    const original = button.textContent;
+    button.textContent = doneLabel;
+    setTimeout(() => { button.textContent = original; }, 1600);
+  } catch {
+    alert("コピーできない場合は、表示された文章を手動で選択してコピーしてください。");
+  }
+}
+
+function copyTrialInvite() {
+  const text = buildTrialInvite();
+  els.trialInviteOutput.value = text;
+  copyText(text, $("#copyTrialInviteButton"));
+}
+
+function copyFeedbackSummary() {
+  copyText(buildFeedbackSummary(), $("#copyFeedbackButton"));
+}
+
 function showOnboarding(force = false) {
   if (!force && localStorage.getItem(ONBOARDING_KEY)) return;
   if (els.reminderDialog.open) return;
@@ -1061,6 +1190,7 @@ function exportData() {
     competitions: state.competitions,
     tasks: state.tasks,
     scores: state.scores,
+    feedbacks: state.feedbacks,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
   }, null, 2)], { type: "application/json" });
@@ -1083,6 +1213,7 @@ function importData(file) {
       state.competitions = Array.isArray(data.competitions) ? data.competitions : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
       state.scores = Array.isArray(data.scores) ? data.scores : [];
+      state.feedbacks = Array.isArray(data.feedbacks) ? data.feedbacks : [];
       state.bpm = Number(data.bpm || 84);
       state.practiceTimerSeconds = Number(data.practiceTimerSeconds || state.practiceTimerSeconds);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
@@ -1121,6 +1252,7 @@ async function clearAllData() {
   state.competitions = [];
   state.tasks = [];
   state.scores = [];
+  state.feedbacks = [];
   state.bpm = 84;
   state.practiceTimerSeconds = 15 * 60;
   state.practiceTimerRemaining = state.practiceTimerSeconds;
@@ -1155,6 +1287,9 @@ function bind() {
   $("#cancelScoreEditButton").addEventListener("click", resetScoreForm);
   $("#addScoreButton").addEventListener("click", saveScore);
   $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
+  $("#copyTrialInviteButton").addEventListener("click", copyTrialInvite);
+  $("#saveFeedbackButton").addEventListener("click", saveFeedback);
+  $("#copyFeedbackButton").addEventListener("click", copyFeedbackSummary);
   $("#showOnboardingButton").addEventListener("click", () => showOnboarding(true));
   $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
   $("#startOnboardingButton").addEventListener("click", startOnboarding);

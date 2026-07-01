@@ -1,4 +1,4 @@
-const CACHE_NAME = "piano-note-zero-cost-v5";
+const CACHE_NAME = "piano-note-zero-cost-v6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,7 +7,8 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/piano-practice-illustration.webp",
-  "./assets/growth-trophy-illustration.webp"
+  "./assets/growth-trophy-illustration.webp",
+  "./assets/trial-checklist-illustration.webp"
 ];
 
 self.addEventListener("install", (event) => {
