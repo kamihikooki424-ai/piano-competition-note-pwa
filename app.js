@@ -21,6 +21,7 @@ const state = {
   recordings: [],
   scores: [],
   feedbacks: [],
+  isSampleData: false,
   editingScoreId: "",
   practiceTimerSeconds: 15 * 60,
   practiceTimerRemaining: 15 * 60,
@@ -38,6 +39,10 @@ const els = {
   taskDoneCount: $("#taskDoneCount"),
   currentScoreLabel: $("#currentScoreLabel"),
   todayPracticeLabel: $("#todayPracticeLabel"),
+  setupCard: $("#setupCard"),
+  setupTitle: $("#setupTitle"),
+  setupSummary: $("#setupSummary"),
+  setupChecks: $("#setupChecks"),
   homeBackupNudge: $("#homeBackupNudge"),
   homeBackupNudgeText: $("#homeBackupNudgeText"),
   backupReminderText: $("#backupReminderText"),
@@ -149,6 +154,7 @@ function load() {
       state.tasks = parsed.tasks || [];
       state.scores = parsed.scores || [];
       state.feedbacks = parsed.feedbacks || [];
+      state.isSampleData = Boolean(parsed.isSampleData);
       state.bpm = parsed.bpm || 84;
       state.practiceTimerSeconds = Number(parsed.practiceTimerSeconds || 15 * 60);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
@@ -210,6 +216,7 @@ function load() {
         next: "左手を小さめにして、メロディを前に出す。"
       }
     ];
+    state.isSampleData = true;
   }
 }
 
@@ -219,6 +226,7 @@ function save() {
     tasks: state.tasks,
     scores: state.scores,
     feedbacks: state.feedbacks,
+    isSampleData: state.isSampleData,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
   }));
@@ -259,6 +267,7 @@ function renderHome() {
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。録音して聴き返しましょう。";
+  renderSetupCard();
   renderHomeBackupNudge();
 
   if (state.competitions.length === 0) {
@@ -291,6 +300,26 @@ function renderHome() {
   $$("[data-edit-competition]").forEach((button) => {
     button.addEventListener("click", () => openCompetitionDialog(button.dataset.editCompetition));
   });
+}
+
+function renderSetupCard() {
+  const checks = [
+    ["コンクール", state.competitions.length > 0],
+    ["練習指示", state.tasks.length > 0],
+    ["録音", state.recordings.length > 0],
+    ["採点", state.scores.length > 0]
+  ];
+  const readyCount = checks.filter(([, ready]) => ready).length;
+  const isReady = readyCount === checks.length && !state.isSampleData;
+  els.setupCard.style.display = isReady ? "none" : "";
+  els.setupTitle.textContent = state.isSampleData ? "サンプル表示中" : "セットアップ";
+  els.setupSummary.textContent = state.isSampleData
+    ? "今は例のデータです。試用するときは自分のコンクールで始められます。"
+    : `販売前チェック：${readyCount}/${checks.length}項目が入力済みです。`;
+  $("#startPersonalSetupButton").textContent = state.isSampleData ? "自分用に始める" : "コンクール登録";
+  els.setupChecks.innerHTML = checks.map(([label, ready]) => `
+    <span class="${ready && !state.isSampleData ? "done" : ""}">${ready && !state.isSampleData ? "✓" : "○"} ${escapeHtml(label)}</span>
+  `).join("");
 }
 
 function renderPractice() {
@@ -465,6 +494,7 @@ function openCompetitionDialog(id = "") {
 
 function saveCompetition(event) {
   event.preventDefault();
+  state.isSampleData = false;
   const id = $("#competitionId").value || createId();
   const item = {
     id,
@@ -508,6 +538,7 @@ function resetTask(id) {
 function addTask() {
   const title = $("#taskTitleInput").value.trim();
   if (!title) return;
+  state.isSampleData = false;
   state.tasks.unshift({ id: createId(), title, detail: "練習後に内容を具体的に書き足す", target: 5, count: 0 });
   $("#taskTitleInput").value = "";
   save();
@@ -526,6 +557,7 @@ function openTaskDialog(id) {
 
 function saveTask(event) {
   event.preventDefault();
+  state.isSampleData = false;
   const id = $("#taskId").value;
   const target = Math.max(1, Number($("#taskTargetEdit").value || 1));
   state.tasks = state.tasks.map((task) => task.id === id ? {
@@ -616,6 +648,7 @@ function updateScorePreview() {
 }
 
 function saveScore() {
+  state.isSampleData = false;
   const values = getScoreFormValues();
   const score = {
     id: state.editingScoreId || createId(),
@@ -876,7 +909,20 @@ function closeOnboarding() {
 
 function startOnboarding() {
   closeOnboarding();
-  setView("practiceView");
+  startPersonalSetup();
+}
+
+function startPersonalSetup() {
+  if (state.isSampleData) {
+    state.competitions = [];
+    state.tasks = [];
+    state.scores = [];
+    state.feedbacks = [];
+    state.isSampleData = false;
+    save();
+    render();
+  }
+  openCompetitionDialog();
 }
 
 function setView(viewId) {
@@ -1297,6 +1343,7 @@ function exportData() {
     tasks: state.tasks,
     scores: state.scores,
     feedbacks: state.feedbacks,
+    isSampleData: state.isSampleData,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
   }, null, 2)], { type: "application/json" });
@@ -1322,6 +1369,7 @@ function importData(file) {
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
       state.scores = Array.isArray(data.scores) ? data.scores : [];
       state.feedbacks = Array.isArray(data.feedbacks) ? data.feedbacks : [];
+      state.isSampleData = Boolean(data.isSampleData);
       state.bpm = Number(data.bpm || 84);
       state.practiceTimerSeconds = Number(data.practiceTimerSeconds || state.practiceTimerSeconds);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
@@ -1361,6 +1409,7 @@ async function clearAllData() {
   state.tasks = [];
   state.scores = [];
   state.feedbacks = [];
+  state.isSampleData = false;
   state.bpm = 84;
   state.practiceTimerSeconds = 15 * 60;
   state.practiceTimerRemaining = state.practiceTimerSeconds;
@@ -1400,6 +1449,8 @@ function bind() {
   $("#saveFeedbackButton").addEventListener("click", saveFeedback);
   $("#copyFeedbackButton").addEventListener("click", copyFeedbackSummary);
   $("#showOnboardingButton").addEventListener("click", () => showOnboarding(true));
+  $("#showSetupGuideButton").addEventListener("click", () => showOnboarding(true));
+  $("#startPersonalSetupButton").addEventListener("click", startPersonalSetup);
   $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
   $("#startOnboardingButton").addEventListener("click", startOnboarding);
   els.recordButton.addEventListener("click", toggleRecording);

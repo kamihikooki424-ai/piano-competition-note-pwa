@@ -178,7 +178,7 @@ main { padding-top: 16px; }
   gap: 8px;
 }
 
-.summary-grid article, .tool-card, .competition-card, .task-card, .recording-card, .notice-card {
+.summary-grid article, .tool-card, .competition-card, .task-card, .recording-card, .notice-card, .setup-card {
   border: 1px solid rgba(216, 227, 223, .9);
   border-radius: 14px;
   background: rgba(255, 255, 255, .88);
@@ -214,6 +214,41 @@ main { padding-top: 16px; }
 .backup-nudge-card .text-button { grid-column: 2; grid-row: 1 / span 2; }
 .notice-card strong, .today-card strong, .backup-nudge-card strong { color: var(--green); }
 .notice-card span, .today-card span, .backup-nudge-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
+
+.setup-card {
+  display: grid;
+  gap: 12px;
+  border-color: rgba(39, 102, 123, .24);
+  background: linear-gradient(135deg, rgba(255,255,255,.94), rgba(241, 247, 245, .92));
+  padding: 14px;
+}
+
+.setup-card strong { color: var(--green); }
+.setup-card span { color: #5b432b; font-size: 13px; line-height: 1.55; }
+.setup-checks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+.setup-checks span {
+  border-radius: 999px;
+  background: #f2eee6;
+  padding: 7px 9px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.setup-checks span.done {
+  background: #dff2e7;
+  color: var(--green);
+}
+
+.setup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
 
 .quick-start-card {
   display: grid;
@@ -840,6 +875,7 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   }
   .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
   .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
+  .setup-checks, .setup-actions { grid-template-columns: 1fr; }
   .quick-start-card { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .score-panel { grid-template-columns: 1fr; }

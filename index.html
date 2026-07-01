@@ -49,6 +49,18 @@
           <span>データはこのスマホ内に保存されます。サーバー、DB、月額課金は使いません。</span>
         </section>
 
+        <section class="setup-card" id="setupCard">
+          <div>
+            <strong id="setupTitle">セットアップ</strong>
+            <span id="setupSummary">状態を確認中です。</span>
+          </div>
+          <div class="setup-checks" id="setupChecks"></div>
+          <div class="setup-actions">
+            <button class="primary-button" id="startPersonalSetupButton" type="button">自分用に始める</button>
+            <button class="secondary-button" id="showSetupGuideButton" type="button">初回案内</button>
+          </div>
+        </section>
+
         <section class="today-card">
           <strong>今日の練習</strong>
           <span id="todayPracticeLabel">練習指示を確認中</span>
@@ -400,7 +412,7 @@
       <p class="subcopy">データと録音はこの端末内に保存されます。外部送信や月額サービスは使いません。</p>
       <div class="dialog-actions">
         <button class="secondary-button" id="closeOnboardingButton">閉じる</button>
-        <button class="primary-button" id="startOnboardingButton">練習から始める</button>
+        <button class="primary-button" id="startOnboardingButton">自分用に始める</button>
       </div>
     </div>
   </dialog>
