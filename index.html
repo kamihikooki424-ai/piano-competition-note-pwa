@@ -55,6 +55,12 @@
           <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
         </section>
 
+        <section class="backup-nudge-card" id="homeBackupNudge">
+          <strong>バックアップ</strong>
+          <span id="homeBackupNudgeText">確認中です。</span>
+          <button class="text-button" data-view-shortcut="settingsView">設定へ</button>
+        </section>
+
         <section class="quick-start-card">
           <button data-view-shortcut="practiceView"><span>1</span>練習指示</button>
           <button data-view-shortcut="recordView"><span>2</span>録音する</button>
@@ -221,6 +227,17 @@
         <section class="notice-card" id="backupReminderCard">
           <strong>バックアップ確認</strong>
           <span id="backupReminderText">バックアップ状況を確認中です。</span>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h2>端末内データ診断</h2>
+              <p>このスマホに保存されている内容</p>
+            </div>
+            <button class="secondary-button" id="copyStorageReportButton">コピー</button>
+          </div>
+          <div id="storageReport" class="storage-report"></div>
         </section>
 
         <section class="notice-card">

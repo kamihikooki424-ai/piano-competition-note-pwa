@@ -189,7 +189,7 @@ main { padding-top: 16px; }
 .summary-grid strong { display: block; color: var(--green); font-size: 20px; }
 .summary-grid span, .subcopy { color: var(--muted); font-size: 12px; line-height: 1.6; }
 
-.notice-card, .today-card {
+.notice-card, .today-card, .backup-nudge-card {
   display: grid;
   gap: 4px;
   border-color: rgba(184, 121, 47, .32);
@@ -197,7 +197,7 @@ main { padding-top: 16px; }
   padding: 14px;
 }
 
-.today-card {
+.today-card, .backup-nudge-card {
   grid-template-columns: 1fr auto;
   align-items: center;
   border: 1px solid rgba(39, 102, 123, .22);
@@ -207,10 +207,13 @@ main { padding-top: 16px; }
 }
 
 .today-card strong,
-.today-card span { grid-column: 1; }
-.today-card .text-button { grid-column: 2; grid-row: 1 / span 2; }
-.notice-card strong, .today-card strong { color: var(--green); }
-.notice-card span, .today-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
+.today-card span,
+.backup-nudge-card strong,
+.backup-nudge-card span { grid-column: 1; }
+.today-card .text-button,
+.backup-nudge-card .text-button { grid-column: 2; grid-row: 1 / span 2; }
+.notice-card strong, .today-card strong, .backup-nudge-card strong { color: var(--green); }
+.notice-card span, .today-card span, .backup-nudge-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
 
 .quick-start-card {
   display: grid;
@@ -564,6 +567,33 @@ input:focus, textarea:focus, select:focus {
   margin-top: 12px;
 }
 
+.storage-report {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.storage-report div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(216, 227, 223, .9);
+  border-radius: 12px;
+  background: #fbfaf7;
+  padding: 10px;
+}
+
+.storage-report span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.storage-report strong {
+  color: var(--green);
+  font-size: 15px;
+}
+
 .backup-steps div,
 .feedback-card {
   position: relative;
@@ -804,14 +834,15 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
     height: 122px;
     opacity: .88;
   }
-  .today-card { grid-template-columns: 1fr; }
-  .today-card .text-button { grid-column: 1; grid-row: auto; }
+  .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
+  .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
   .quick-start-card { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .score-panel { grid-template-columns: 1fr; }
   .score-ring { width: 96px; height: 96px; }
   .score-illustration { right: 18px; bottom: -20px; width: 96px; height: 96px; opacity: .5; }
   .score-type-row, .score-grid { grid-template-columns: 1fr; }
+  .storage-report { grid-template-columns: 1fr; }
   .split-actions { grid-template-columns: 1fr; }
   .bottom-nav button { font-size: 11px; }
 }

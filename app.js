@@ -38,6 +38,8 @@ const els = {
   taskDoneCount: $("#taskDoneCount"),
   currentScoreLabel: $("#currentScoreLabel"),
   todayPracticeLabel: $("#todayPracticeLabel"),
+  homeBackupNudge: $("#homeBackupNudge"),
+  homeBackupNudgeText: $("#homeBackupNudgeText"),
   backupReminderText: $("#backupReminderText"),
   competitionList: $("#competitionList"),
   taskList: $("#taskList"),
@@ -61,6 +63,7 @@ const els = {
   teacherMemoOutput: $("#teacherMemoOutput"),
   trialInviteOutput: $("#trialInviteOutput"),
   feedbackList: $("#feedbackList"),
+  storageReport: $("#storageReport"),
   onboardingDialog: $("#onboardingDialog"),
   competitionDialog: $("#competitionDialog"),
   competitionForm: $("#competitionForm"),
@@ -227,6 +230,7 @@ function render() {
   renderRecordings();
   renderGrowth();
   renderTrialTools();
+  renderStorageReport();
   renderBackupStatus();
 }
 
@@ -255,6 +259,7 @@ function renderHome() {
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。録音して聴き返しましょう。";
+  renderHomeBackupNudge();
 
   if (state.competitions.length === 0) {
     els.competitionList.innerHTML = `<div class="notice-card"><strong>まだ登録がありません</strong><span>右上の＋からコンクールを追加できます。</span></div>`;
@@ -1045,6 +1050,7 @@ async function loadRecordingsFromDb() {
         url: URL.createObjectURL(recording.blob)
       }));
     renderRecordings();
+    renderStorageReport();
   } catch {
     els.recordMessage.textContent = "このブラウザでは録音の端末内保存に対応していない可能性があります。";
   }
@@ -1185,6 +1191,73 @@ function renderBackupStatus() {
     : `最終バックアップ：${formatDate(lastBackup)}。1週間以上たつ場合は書き出しをおすすめします。`;
 }
 
+function renderHomeBackupNudge() {
+  const lastBackup = localStorage.getItem(BACKUP_KEY);
+  if (!lastBackup) {
+    els.homeBackupNudge.style.display = "";
+    els.homeBackupNudgeText.textContent = "まだバックアップがありません。試用前に一度書き出すと安心です。";
+    return;
+  }
+  const days = daysUntil(lastBackup);
+  const elapsed = days === null ? null : Math.abs(days);
+  if (elapsed !== null && elapsed <= 7) {
+    els.homeBackupNudge.style.display = "none";
+    return;
+  }
+  els.homeBackupNudge.style.display = "";
+  els.homeBackupNudgeText.textContent = `最終バックアップ：${formatDate(lastBackup)}。そろそろ書き出しをおすすめします。`;
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return "0 MB";
+  return `${(bytes / 1024 / 1024).toFixed(bytes > 1024 * 1024 ? 1 : 2)} MB`;
+}
+
+function getBackupStatusLabel() {
+  const lastBackup = localStorage.getItem(BACKUP_KEY);
+  if (!lastBackup) return "未作成";
+  const days = daysUntil(lastBackup);
+  const elapsed = days === null ? null : Math.abs(days);
+  return elapsed !== null && elapsed <= 7 ? "最近作成済み" : "再作成推奨";
+}
+
+function getRecordingBytes() {
+  return state.recordings.reduce((sum, recording) => sum + Number(recording.blob?.size || 0), 0);
+}
+
+function getStorageReportItems() {
+  return [
+    ["コンクール", `${state.competitions.length}件`],
+    ["練習指示", `${state.tasks.length}件`],
+    ["採点", `${state.scores.length}件`],
+    ["録音", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
+    ["試用メモ", `${state.feedbacks.length}件`],
+    ["バックアップ", getBackupStatusLabel()]
+  ];
+}
+
+function renderStorageReport() {
+  els.storageReport.innerHTML = getStorageReportItems().map(([label, value]) => `
+    <div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+  `).join("");
+}
+
+function buildStorageReport() {
+  return [
+    "【ピアノコンクールノート 端末内データ診断】",
+    `作成日：${formatDate(todayKey())}`,
+    "",
+    ...getStorageReportItems().map(([label, value]) => `${label}：${value}`),
+    "",
+    "入力データと録音はこの端末内に保存されています。GitHubへは送信されません。",
+    "録音ファイル本体はJSONバックアップに含まれないため、必要な録音は個別に端末へ保存してください。"
+  ].join("\n");
+}
+
+function copyStorageReport() {
+  copyText(buildStorageReport(), $("#copyStorageReportButton"));
+}
+
 function exportData() {
   const blob = new Blob([JSON.stringify({
     competitions: state.competitions,
@@ -1287,6 +1360,7 @@ function bind() {
   $("#cancelScoreEditButton").addEventListener("click", resetScoreForm);
   $("#addScoreButton").addEventListener("click", saveScore);
   $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
+  $("#copyStorageReportButton").addEventListener("click", copyStorageReport);
   $("#copyTrialInviteButton").addEventListener("click", copyTrialInvite);
   $("#saveFeedbackButton").addEventListener("click", saveFeedback);
   $("#copyFeedbackButton").addEventListener("click", copyFeedbackSummary);
