@@ -291,6 +291,8 @@ function renderHome() {
     .sort((a, b) => (daysUntil(a.deadline) ?? 9999) - (daysUntil(b.deadline) ?? 9999))
     .map((item) => {
       const urgent = [0, 1].includes(daysUntil(item.deadline));
+      const checks = getApplicationChecks(item);
+      const doneCount = checks.filter((check) => check.done).length;
       return `
         <article class="competition-card ${urgent ? "urgent" : ""}">
           <h3>${escapeHtml(item.name)}</h3>
@@ -302,6 +304,16 @@ function renderHome() {
             <div>参加料：${yen(item.fee)}</div>
             ${item.memo ? `<div>メモ：${escapeHtml(item.memo)}</div>` : ""}
           </div>
+          <div class="application-checks">
+            <strong>申込手続き ${doneCount}/${checks.length}</strong>
+            <div>
+              ${checks.map((check) => `
+                <button class="${check.done ? "done" : ""}" data-application-check="${item.id}:${check.key}">
+                  ${check.done ? "✓" : "○"} ${escapeHtml(check.label)}
+                </button>
+              `).join("")}
+            </div>
+          </div>
           <div class="card-actions">
             <button class="text-button" data-edit-competition="${item.id}">編集</button>
           </div>
@@ -312,6 +324,45 @@ function renderHome() {
   $$("[data-edit-competition]").forEach((button) => {
     button.addEventListener("click", () => openCompetitionDialog(button.dataset.editCompetition));
   });
+  $$("[data-application-check]").forEach((button) => {
+    button.addEventListener("click", () => toggleApplicationCheck(button.dataset.applicationCheck));
+  });
+}
+
+function applicationCheckDefinitions() {
+  return [
+    ["page", "申込ページ"],
+    ["division", "部門確認"],
+    ["payment", "支払い"],
+    ["schedule", "当日情報"]
+  ];
+}
+
+function getApplicationChecks(competition) {
+  const saved = competition.applicationChecks || {};
+  return applicationCheckDefinitions().map(([key, label]) => ({
+    key,
+    label,
+    done: Boolean(saved[key])
+  }));
+}
+
+function getApplicationCheckSummary(competition) {
+  const checks = getApplicationChecks(competition);
+  return `${checks.filter((check) => check.done).length}/${checks.length}完了`;
+}
+
+function toggleApplicationCheck(value) {
+  const [id, key] = String(value || "").split(":");
+  state.isSampleData = false;
+  state.competitions = state.competitions.map((competition) => {
+    if (competition.id !== id) return competition;
+    const applicationChecks = { ...(competition.applicationChecks || {}) };
+    applicationChecks[key] = !applicationChecks[key];
+    return { ...competition, applicationChecks };
+  });
+  save();
+  render();
 }
 
 function renderSetupCard() {
@@ -534,6 +585,7 @@ function saveCompetition(event) {
   event.preventDefault();
   state.isSampleData = false;
   const id = $("#competitionId").value || createId();
+  const current = state.competitions.find((competition) => competition.id === id);
   const item = {
     id,
     name: $("#competitionName").value.trim(),
@@ -542,7 +594,8 @@ function saveCompetition(event) {
     eventDate: $("#competitionEventDate").value,
     venue: $("#competitionVenue").value.trim(),
     fee: $("#competitionFee").value.trim(),
-    memo: $("#competitionMemo").value.trim()
+    memo: $("#competitionMemo").value.trim(),
+    applicationChecks: current?.applicationChecks || {}
   };
   const index = state.competitions.findIndex((competition) => competition.id === id);
   if (index >= 0) state.competitions[index] = item;
@@ -804,6 +857,7 @@ function buildTeacherMemo() {
     nextCompetition
       ? `${nextCompetition.name} / ${nextCompetition.division || "部門未設定"} / 本番 ${formatDate(nextCompetition.eventDate)} / 申込締切 ${formatDate(nextCompetition.deadline)}`
       : "未登録",
+    nextCompetition ? `申込手続き：${getApplicationCheckSummary(nextCompetition)}` : "",
     "",
     "■ 最新採点",
     latestScore
@@ -1361,6 +1415,7 @@ function checkReminders(force = false) {
     <div>申込締切：${formatDate(item.deadline)}</div>
     <div>会場：${escapeHtml(item.venue || "未設定")}</div>
     <div>参加料：${yen(item.fee)}</div>
+    <div>申込手続き：${getApplicationCheckSummary(item)}</div>
     ${item.memo ? `<div>メモ：${escapeHtml(item.memo)}</div>` : ""}
     <div>忘れずに申込手続きを確認してください。</div>
   `;

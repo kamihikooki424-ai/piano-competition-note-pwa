@@ -302,6 +302,35 @@ main { padding-top: 16px; }
 .competition-card.urgent::before { background: linear-gradient(180deg, var(--rose), var(--gold)); }
 .competition-card h3 { padding-left: 2px; }
 .meta-list { display: grid; gap: 6px; margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.application-checks {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  border-radius: 12px;
+  background: #fbfaf7;
+  padding: 10px;
+}
+.application-checks strong {
+  color: var(--green);
+  font-size: 13px;
+}
+.application-checks div {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+.application-checks button {
+  min-height: 34px;
+  border-radius: 999px;
+  background: #f2eee6;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+.application-checks button.done {
+  background: #dff2e7;
+  color: var(--green);
+}
 .card-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 
 .text-button, .primary-button, .secondary-button, .danger-button, .pill-button, .inline-form button {
@@ -901,6 +930,7 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
   .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
   .setup-checks, .setup-actions { grid-template-columns: 1fr; }
+  .application-checks div { grid-template-columns: 1fr; }
   .quick-start-card { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .score-panel { grid-template-columns: 1fr; }
