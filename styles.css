@@ -302,6 +302,65 @@ main { padding-top: 16px; }
   line-height: 1.15;
 }
 
+.readiness-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(184, 121, 47, .28);
+  border-radius: 14px;
+  background: #fffaf0;
+  padding: 14px;
+  box-shadow: 0 12px 30px rgba(18, 33, 31, .08);
+}
+.readiness-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+.readiness-head strong { display: block; color: var(--green); }
+.readiness-head span { color: #5b432b; font-size: 13px; line-height: 1.5; }
+.readiness-score {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 6px solid rgba(184, 121, 47, .22);
+  border-radius: 999px;
+  background: #fff;
+}
+.readiness-score strong { font-size: 20px; line-height: 1; }
+.readiness-score span { margin-top: -18px; font-size: 10px; font-weight: 900; }
+.readiness-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(216, 227, 223, .85);
+}
+.readiness-bar span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+  transition: width .2s ease;
+}
+.next-action-list {
+  display: grid;
+  gap: 8px;
+}
+.next-action-list button {
+  display: grid;
+  gap: 4px;
+  min-height: 58px;
+  border: 1px solid rgba(39, 102, 123, .18);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 12px;
+  text-align: left;
+}
+.next-action-list strong { color: var(--green); font-size: 14px; }
+.next-action-list span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+
 .setup-card {
   display: grid;
   gap: 12px;
@@ -1054,6 +1113,8 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   }
   .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
   .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
+  .readiness-head { grid-template-columns: 1fr; }
+  .readiness-score { width: 68px; height: 68px; }
   .setup-checks, .setup-actions { grid-template-columns: 1fr; }
   .home-status-list { grid-template-columns: 1fr; }
   .application-checks div { grid-template-columns: 1fr; }

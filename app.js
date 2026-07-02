@@ -49,10 +49,15 @@ const els = {
   currentScoreLabel: $("#currentScoreLabel"),
   weeklyPracticeLabel: $("#weeklyPracticeLabel"),
   practiceStreakLabel: $("#practiceStreakLabel"),
+  readinessScoreLabel: $("#readinessScoreLabel"),
   homeStatusList: $("#homeStatusList"),
   todayPracticeLabel: $("#todayPracticeLabel"),
   weeklyPracticeDetail: $("#weeklyPracticeDetail"),
   weeklyPracticeDays: $("#weeklyPracticeDays"),
+  readinessDetail: $("#readinessDetail"),
+  readinessHeroScore: $("#readinessHeroScore"),
+  readinessBar: $("#readinessBar"),
+  nextActionList: $("#nextActionList"),
   setupCard: $("#setupCard"),
   setupTitle: $("#setupTitle"),
   setupSummary: $("#setupSummary"),
@@ -217,6 +222,108 @@ function renderPracticeStats() {
 function formatPracticeStatsForMemo() {
   const stats = getPracticeStats();
   return `直近7日：${stats.practicedDays}日 / ${formatMinutes(stats.weeklyMinutes)}、連続練習：${stats.streak}日`;
+}
+
+function getNextCompetition() {
+  return [...state.competitions]
+    .filter((competition) => daysUntil(competition.eventDate) === null || daysUntil(competition.eventDate) >= 0)
+    .sort((a, b) => (daysUntil(a.eventDate) ?? 9999) - (daysUntil(b.eventDate) ?? 9999))[0]
+    || [...state.competitions].sort((a, b) => (daysUntil(b.eventDate) ?? -9999) - (daysUntil(a.eventDate) ?? -9999))[0]
+    || null;
+}
+
+function getReadinessStatus() {
+  const competition = getNextCompetition();
+  const latestScore = getLatestScore();
+  const practiceStats = getPracticeStats();
+  const openTasks = state.tasks.filter((task) => Number(task.count || 0) < Number(task.target || 1));
+  const taskProgress = state.tasks.length
+    ? state.tasks.reduce((sum, task) => {
+      const target = Math.max(1, Number(task.target || 1));
+      return sum + Math.min(1, Number(task.count || 0) / target);
+    }, 0) / state.tasks.length
+    : 0;
+  const applicationChecks = competition ? getApplicationChecks(competition) : [];
+  const applicationRatio = applicationChecks.length
+    ? applicationChecks.filter((check) => check.done).length / applicationChecks.length
+    : 0;
+  const deadlineDays = competition ? daysUntil(competition.deadline) : null;
+  const eventDays = competition ? daysUntil(competition.eventDate) : null;
+
+  const score = Math.round(
+    (competition ? 12 : 0)
+    + (applicationRatio * 18)
+    + (state.pieces.length ? 12 : 0)
+    + (taskProgress * 18)
+    + (practiceStats.practicedDays >= 3 ? 14 : practiceStats.practicedDays * 4)
+    + (state.recordings.length ? 12 : 0)
+    + (latestScore ? Math.min(14, latestScore.total * 0.14) : 0)
+  );
+
+  const actions = [];
+  if (!state.childProfile?.name) {
+    actions.push({ label: "プロフィール登録", detail: "設定で生徒名と学年を入れる", view: "settingsView" });
+  }
+  if (!competition) {
+    actions.push({ label: "コンクール登録", detail: "本番日と申込締切を入れる", view: "homeView" });
+  } else if (deadlineDays !== null && deadlineDays <= 1 && applicationRatio < 1) {
+    actions.push({ label: "申込手続き確認", detail: `${competition.name}の申込チェックを完了する`, view: "homeView" });
+  } else if (applicationRatio < 1) {
+    actions.push({ label: "申込チェック", detail: `残り${applicationChecks.length - applicationChecks.filter((check) => check.done).length}項目を確認`, view: "homeView" });
+  }
+  if (state.pieces.length === 0) {
+    actions.push({ label: "曲を登録", detail: "課題曲・目標テンポ・注意点を入れる", view: "practiceView" });
+  }
+  if (state.tasks.length === 0) {
+    actions.push({ label: "練習指示を登録", detail: "先生からの練習方法を回数で管理する", view: "practiceView" });
+  } else if (openTasks.length > 0) {
+    const task = openTasks[0];
+    actions.push({ label: "今日の練習", detail: `${task.title}をあと${Math.max(0, Number(task.target || 1) - Number(task.count || 0))}回`, view: "practiceView" });
+  }
+  if (!practiceStats.last7Days.at(-1)?.practiced) {
+    actions.push({ label: "練習記録", detail: "今日の練習時間と内容を残す", view: "practiceView" });
+  }
+  if (state.recordings.length === 0) {
+    actions.push({ label: "録音する", detail: "一度弾いて聴き返せる状態にする", view: "recordView" });
+  }
+  if (!latestScore) {
+    actions.push({ label: "採点する", detail: "今の完成度を100点で残す", view: "growthView" });
+  }
+  if (actions.length === 0) {
+    actions.push({ label: "先生に確認依頼", detail: "録音チェック依頼文をコピーして送る", view: "growthView" });
+  }
+
+  const statusText = competition
+    ? `${competition.name}${eventDays !== null ? ` / 本番まで${formatDays(competition.eventDate)}` : ""}`
+    : "コンクールを登録すると準備度を出せます";
+
+  return {
+    score: Math.min(100, Math.max(0, score)),
+    statusText,
+    actions: actions.slice(0, 3)
+  };
+}
+
+function renderReadinessStatus() {
+  const readiness = getReadinessStatus();
+  els.readinessScoreLabel.textContent = `${readiness.score}%`;
+  els.readinessHeroScore.textContent = `${readiness.score}%`;
+  els.readinessDetail.textContent = readiness.statusText;
+  els.readinessBar.style.width = `${readiness.score}%`;
+  els.nextActionList.innerHTML = readiness.actions.map((action) => `
+    <button data-view-shortcut="${action.view}">
+      <strong>${escapeHtml(action.label)}</strong>
+      <span>${escapeHtml(action.detail)}</span>
+    </button>
+  `).join("");
+  els.nextActionList.querySelectorAll("[data-view-shortcut]").forEach((button) => {
+    button.addEventListener("click", () => setView(button.dataset.viewShortcut));
+  });
+}
+
+function formatReadinessForMemo() {
+  const readiness = getReadinessStatus();
+  return `本番準備度：${readiness.score}% / 次アクション：${readiness.actions.map((action) => `${action.label}（${action.detail}）`).join("、")}`;
 }
 
 function yen(value) {
@@ -403,6 +510,7 @@ function renderHome() {
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。録音して聴き返しましょう。";
   renderPracticeStats();
+  renderReadinessStatus();
   renderHomeStatus();
   renderSetupCard();
   renderHomeBackupNudge();
@@ -1173,6 +1281,7 @@ function buildTeacherMemo() {
   const recentRecordings = importantRecordings.length ? importantRecordings : state.recordings.slice(0, 3);
   const childProfileLine = formatChildProfileForMemo();
   const practiceStatsLine = formatPracticeStatsForMemo();
+  const readinessLine = formatReadinessForMemo();
 
   const lines = [
     "【ピアノコンクール練習メモ】",
@@ -1186,6 +1295,7 @@ function buildTeacherMemo() {
       ? `${nextCompetition.name} / ${nextCompetition.division || "部門未設定"} / 本番 ${formatDate(nextCompetition.eventDate)} / 申込締切 ${formatDate(nextCompetition.deadline)}`
       : "未登録",
     nextCompetition ? `申込手続き：${getApplicationCheckSummary(nextCompetition)}` : "",
+    readinessLine,
     "",
     "■ 曲",
     ...(pieces.length
@@ -1256,6 +1366,7 @@ function buildTeacherReviewRequest() {
     : "先生コメント未登録";
   const childProfileLine = formatChildProfileForMemo();
   const practiceStatsLine = formatPracticeStatsForMemo();
+  const readinessLine = formatReadinessForMemo();
   const recordingLine = recording
     ? `${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
     : "録音は別途送ります";
@@ -1271,6 +1382,7 @@ function buildTeacherReviewRequest() {
     `前回の先生コメント：${teacherCommentLine}`,
     `直近の練習：${practiceLine}`,
     `練習ペース：${practiceStatsLine}`,
+    `準備状況：${readinessLine}`,
     `今の練習課題：${taskLine}`,
     "",
     "見ていただきたいこと：",
