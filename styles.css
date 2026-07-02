@@ -461,6 +461,13 @@ main { padding-top: 16px; }
 
 .tool-card { padding: 15px; }
 .tool-heading p { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.profile-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.profile-form label:last-child { grid-column: 1 / -1; }
 .settings-illustration {
   display: block;
   width: 100%;
@@ -1005,6 +1012,8 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .setup-checks, .setup-actions { grid-template-columns: 1fr; }
   .home-status-list { grid-template-columns: 1fr; }
   .application-checks div { grid-template-columns: 1fr; }
+  .profile-form { grid-template-columns: 1fr; }
+  .profile-form label:last-child { grid-column: auto; }
   .piece-form { grid-template-columns: 1fr; }
   .quick-start-card { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }

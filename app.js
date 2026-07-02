@@ -6,6 +6,12 @@ const RECORDING_DB_NAME = "piano-note-recordings-v1";
 const RECORDING_STORE_NAME = "recordings";
 
 const state = {
+  childProfile: {
+    name: "",
+    grade: "",
+    birthYear: "",
+    memo: ""
+  },
   competitions: [],
   pieces: [],
   tasks: [],
@@ -50,6 +56,11 @@ const els = {
   homeBackupNudge: $("#homeBackupNudge"),
   homeBackupNudgeText: $("#homeBackupNudgeText"),
   backupReminderText: $("#backupReminderText"),
+  profileSummary: $("#profileSummary"),
+  childNameInput: $("#childNameInput"),
+  childGradeInput: $("#childGradeInput"),
+  childBirthYearInput: $("#childBirthYearInput"),
+  childMemoInput: $("#childMemoInput"),
   competitionList: $("#competitionList"),
   pieceList: $("#pieceList"),
   taskList: $("#taskList"),
@@ -152,12 +163,22 @@ function escapeHtml(value) {
   })[char]);
 }
 
+function normalizeChildProfile(profile = {}) {
+  return {
+    name: String(profile.name || ""),
+    grade: String(profile.grade || ""),
+    birthYear: String(profile.birthYear || ""),
+    memo: String(profile.memo || "")
+  };
+}
+
 function load() {
   const saved = localStorage.getItem(STORE_KEY);
   let hasSavedData = Boolean(saved);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
+      state.childProfile = normalizeChildProfile(parsed.childProfile);
       state.competitions = parsed.competitions || [];
       state.pieces = parsed.pieces || [];
       state.tasks = parsed.tasks || [];
@@ -176,6 +197,12 @@ function load() {
   }
 
   if (!hasSavedData && state.competitions.length === 0) {
+    state.childProfile = {
+      name: "はな",
+      grade: "小学5年",
+      birthYear: "2015",
+      memo: "本番であわてず、音の響きを大切に練習中"
+    };
     state.competitions = [{
       id: createId(),
       name: "ブルグミュラーコンクール",
@@ -253,6 +280,7 @@ function load() {
 
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify({
+    childProfile: state.childProfile,
     competitions: state.competitions,
     pieces: state.pieces,
     tasks: state.tasks,
@@ -272,6 +300,7 @@ function render() {
   renderRecordings();
   renderGrowth();
   renderTrialTools();
+  renderChildProfile();
   renderStorageReport();
   renderBackupStatus();
 }
@@ -389,11 +418,18 @@ function toggleApplicationCheck(value) {
 }
 
 function renderHomeStatus() {
+  const profile = getChildProfileSummary();
   const piece = state.pieces[0];
   const latestPracticeLog = state.practiceLogs.at(-1);
   const latestTeacherComment = state.teacherComments.at(-1);
   const recording = state.recordings[0];
   const items = [
+    {
+      label: "生徒",
+      title: profile.title,
+      detail: profile.detail,
+      view: "settingsView"
+    },
     {
       label: "曲",
       title: piece ? piece.title : "曲を登録",
@@ -435,8 +471,52 @@ function renderHomeStatus() {
   });
 }
 
+function getChildProfileSummary() {
+  const profile = normalizeChildProfile(state.childProfile);
+  const title = profile.name || "生徒名を登録";
+  const details = [profile.grade, profile.birthYear ? `${profile.birthYear}年生まれ` : ""].filter(Boolean);
+  return {
+    title,
+    detail: details.length ? details.join(" / ") : "設定画面でプロフィールを登録できます"
+  };
+}
+
+function formatChildProfileForMemo() {
+  const profile = normalizeChildProfile(state.childProfile);
+  const main = [
+    profile.name || "生徒名未登録",
+    profile.grade,
+    profile.birthYear ? `${profile.birthYear}年生まれ` : ""
+  ].filter(Boolean).join(" / ");
+  return profile.memo ? `${main} / メモ：${profile.memo}` : main;
+}
+
+function renderChildProfile() {
+  if (!els.childNameInput) return;
+  const profile = normalizeChildProfile(state.childProfile);
+  const summary = getChildProfileSummary();
+  els.profileSummary.textContent = profile.memo ? `${summary.detail} / ${profile.memo}` : summary.detail;
+  els.childNameInput.value = profile.name;
+  els.childGradeInput.value = profile.grade;
+  els.childBirthYearInput.value = profile.birthYear;
+  els.childMemoInput.value = profile.memo;
+}
+
+function saveChildProfile() {
+  state.isSampleData = false;
+  state.childProfile = normalizeChildProfile({
+    name: els.childNameInput.value.trim(),
+    grade: els.childGradeInput.value.trim(),
+    birthYear: els.childBirthYearInput.value.trim(),
+    memo: els.childMemoInput.value.trim()
+  });
+  save();
+  render();
+}
+
 function renderSetupCard() {
   const checks = [
+    ["プロフィール", Boolean(state.childProfile.name)],
     ["コンクール", state.competitions.length > 0],
     ["曲", state.pieces.length > 0],
     ["練習指示", state.tasks.length > 0],
@@ -1018,10 +1098,14 @@ function buildTeacherMemo() {
   const recentPracticeLogs = [...state.practiceLogs].reverse().slice(0, 3);
   const importantRecordings = state.recordings.filter((recording) => recording.favorite).slice(0, 3);
   const recentRecordings = importantRecordings.length ? importantRecordings : state.recordings.slice(0, 3);
+  const childProfileLine = formatChildProfileForMemo();
 
   const lines = [
     "【ピアノコンクール練習メモ】",
     `作成日：${formatDate(todayKey())}`,
+    "",
+    "■ 生徒",
+    childProfileLine,
     "",
     "■ コンクール",
     nextCompetition
@@ -1095,6 +1179,7 @@ function buildTeacherReviewRequest() {
   const teacherCommentLine = latestTeacherComment
     ? `${formatDate(latestTeacherComment.date)} - ${latestTeacherComment.body || ""}${latestTeacherComment.next ? ` / 次：${latestTeacherComment.next}` : ""}`
     : "先生コメント未登録";
+  const childProfileLine = formatChildProfileForMemo();
   const recordingLine = recording
     ? `${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
     : "録音は別途送ります";
@@ -1102,6 +1187,7 @@ function buildTeacherReviewRequest() {
   return [
     "先生、録音チェックをお願いします。",
     "",
+    `生徒：${childProfileLine}`,
     `コンクール：${competitionLine}`,
     `曲：${pieceLine}`,
     `確認してほしい録音：${recordingLine}`,
@@ -1282,6 +1368,7 @@ function startOnboarding() {
 
 function startPersonalSetup() {
   if (state.isSampleData) {
+    state.childProfile = normalizeChildProfile();
     state.competitions = [];
     state.pieces = [];
     state.tasks = [];
@@ -1679,6 +1766,7 @@ function getUnsavedRecordingCount() {
 function getStorageReportItems() {
   const unsavedCount = getUnsavedRecordingCount();
   return [
+    ["プロフィール", state.childProfile?.name ? "登録済み" : "未登録"],
     ["コンクール", `${state.competitions.length}件`],
     ["曲", `${state.pieces.length}件`],
     ["練習指示", `${state.tasks.length}件`],
@@ -1716,6 +1804,7 @@ function copyStorageReport() {
 
 function exportData() {
   const blob = new Blob([JSON.stringify({
+    childProfile: state.childProfile,
     competitions: state.competitions,
     pieces: state.pieces,
     tasks: state.tasks,
@@ -1745,6 +1834,7 @@ function importData(file) {
   reader.onload = () => {
     try {
       const data = JSON.parse(String(reader.result));
+      state.childProfile = normalizeChildProfile(data.childProfile);
       state.competitions = Array.isArray(data.competitions) ? data.competitions : [];
       state.pieces = Array.isArray(data.pieces) ? data.pieces : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
@@ -1789,6 +1879,7 @@ async function clearAllData() {
   }
 
   state.competitions = [];
+  state.childProfile = normalizeChildProfile();
   state.pieces = [];
   state.tasks = [];
   state.practiceLogs = [];
@@ -1841,6 +1932,7 @@ function bind() {
   $("#showOnboardingButton").addEventListener("click", () => showOnboarding(true));
   $("#showSetupGuideButton").addEventListener("click", () => showOnboarding(true));
   $("#startPersonalSetupButton").addEventListener("click", startPersonalSetup);
+  $("#saveChildProfileButton").addEventListener("click", saveChildProfile);
   $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
   $("#startOnboardingButton").addEventListener("click", startOnboarding);
   els.recordButton.addEventListener("click", toggleRecording);

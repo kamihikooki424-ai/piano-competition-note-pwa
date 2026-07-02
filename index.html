@@ -304,6 +304,33 @@
       </section>
 
       <section class="view" id="settingsView">
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h2>子どもプロフィール</h2>
+              <p id="profileSummary">未登録</p>
+            </div>
+            <button class="secondary-button" id="saveChildProfileButton">保存</button>
+          </div>
+          <div class="profile-form">
+            <label>
+              名前
+              <input id="childNameInput" type="text" placeholder="例：はな">
+            </label>
+            <label>
+              学年
+              <input id="childGradeInput" type="text" placeholder="例：小学5年">
+            </label>
+            <label>
+              生年
+              <input id="childBirthYearInput" type="text" inputmode="numeric" placeholder="例：2015">
+            </label>
+            <label>
+              メモ
+              <textarea id="childMemoInput" rows="2" placeholder="性格、得意なこと、気をつけたいこと"></textarea>
+            </label>
+          </div>
+        </section>
         <section class="notice-card" id="backupReminderCard">
           <strong>バックアップ確認</strong>
           <span id="backupReminderText">バックアップ状況を確認中です。</span>
