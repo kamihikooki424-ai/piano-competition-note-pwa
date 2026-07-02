@@ -47,8 +47,12 @@ const els = {
   urgentCount: $("#urgentCount"),
   taskDoneCount: $("#taskDoneCount"),
   currentScoreLabel: $("#currentScoreLabel"),
+  weeklyPracticeLabel: $("#weeklyPracticeLabel"),
+  practiceStreakLabel: $("#practiceStreakLabel"),
   homeStatusList: $("#homeStatusList"),
   todayPracticeLabel: $("#todayPracticeLabel"),
+  weeklyPracticeDetail: $("#weeklyPracticeDetail"),
+  weeklyPracticeDays: $("#weeklyPracticeDays"),
   setupCard: $("#setupCard"),
   setupTitle: $("#setupTitle"),
   setupSummary: $("#setupSummary"),
@@ -118,6 +122,13 @@ function addDays(days) {
   return toDateKey(date);
 }
 
+function dateKeyOffset(key, days) {
+  const date = parseDate(key);
+  if (!date) return "";
+  date.setDate(date.getDate() + days);
+  return toDateKey(date);
+}
+
 function parseDate(value) {
   if (!value) return null;
   const [year, month, day] = value.split("-").map(Number);
@@ -145,6 +156,67 @@ function formatDays(value) {
   if (days === 0) return "今日";
   if (days > 0) return `あと${days}日`;
   return `${Math.abs(days)}日前`;
+}
+
+function formatMinutes(minutes) {
+  const value = Math.max(0, Number(minutes || 0));
+  if (value >= 60) {
+    const hours = Math.floor(value / 60);
+    const rest = value % 60;
+    return rest ? `${hours}時間${rest}分` : `${hours}時間`;
+  }
+  return `${value}分`;
+}
+
+function getPracticeMinutesByDate() {
+  return state.practiceLogs.reduce((map, log) => {
+    if (!log.date) return map;
+    map.set(log.date, (map.get(log.date) || 0) + Number(log.minutes || 0));
+    return map;
+  }, new Map());
+}
+
+function getPracticeStats() {
+  const minutesByDate = getPracticeMinutesByDate();
+  const today = todayKey();
+  const last7Days = Array.from({ length: 7 }, (_, index) => {
+    const date = dateKeyOffset(today, index - 6);
+    const minutes = minutesByDate.get(date) || 0;
+    return { date, minutes, practiced: minutes > 0 };
+  });
+  const weeklyMinutes = last7Days.reduce((sum, day) => sum + day.minutes, 0);
+  const practicedDays = last7Days.filter((day) => day.practiced).length;
+  let streak = 0;
+  for (let offset = 0; offset > -90; offset -= 1) {
+    const date = dateKeyOffset(today, offset);
+    if ((minutesByDate.get(date) || 0) <= 0) break;
+    streak += 1;
+  }
+  return { last7Days, weeklyMinutes, practicedDays, streak };
+}
+
+function renderPracticeStats() {
+  const stats = getPracticeStats();
+  els.weeklyPracticeLabel.textContent = formatMinutes(stats.weeklyMinutes);
+  els.practiceStreakLabel.textContent = `${stats.streak}日`;
+  els.weeklyPracticeDetail.textContent = stats.weeklyMinutes
+    ? `直近7日で${stats.practicedDays}日、合計${formatMinutes(stats.weeklyMinutes)}練習しています。`
+    : "まだ直近7日の練習記録がありません。今日の練習を残しましょう。";
+  els.weeklyPracticeDays.innerHTML = stats.last7Days.map((day) => {
+    const date = parseDate(day.date);
+    const label = date ? `${date.getMonth() + 1}/${date.getDate()}` : "";
+    return `
+      <span class="${day.practiced ? "done" : ""}" title="${escapeHtml(label)} ${escapeHtml(formatMinutes(day.minutes))}">
+        <em>${escapeHtml(label)}</em>
+        <strong>${day.practiced ? escapeHtml(formatMinutes(day.minutes)) : "-"}</strong>
+      </span>
+    `;
+  }).join("");
+}
+
+function formatPracticeStatsForMemo() {
+  const stats = getPracticeStats();
+  return `直近7日：${stats.practicedDays}日 / ${formatMinutes(stats.weeklyMinutes)}、連続練習：${stats.streak}日`;
 }
 
 function yen(value) {
@@ -330,6 +402,7 @@ function renderHome() {
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。録音して聴き返しましょう。";
+  renderPracticeStats();
   renderHomeStatus();
   renderSetupCard();
   renderHomeBackupNudge();
@@ -1099,6 +1172,7 @@ function buildTeacherMemo() {
   const importantRecordings = state.recordings.filter((recording) => recording.favorite).slice(0, 3);
   const recentRecordings = importantRecordings.length ? importantRecordings : state.recordings.slice(0, 3);
   const childProfileLine = formatChildProfileForMemo();
+  const practiceStatsLine = formatPracticeStatsForMemo();
 
   const lines = [
     "【ピアノコンクール練習メモ】",
@@ -1136,6 +1210,7 @@ function buildTeacherMemo() {
       : ["完了済み、または未登録"]),
     "",
     "■ 最近の練習記録",
+    practiceStatsLine,
     ...(recentPracticeLogs.length
       ? recentPracticeLogs.map((log) => `・${formatDate(log.date)}：${log.minutes}分 / ${log.doneSummary || "進み具合未記録"} / ${log.memo || "メモなし"}`)
       : ["練習記録未登録"]),
@@ -1180,6 +1255,7 @@ function buildTeacherReviewRequest() {
     ? `${formatDate(latestTeacherComment.date)} - ${latestTeacherComment.body || ""}${latestTeacherComment.next ? ` / 次：${latestTeacherComment.next}` : ""}`
     : "先生コメント未登録";
   const childProfileLine = formatChildProfileForMemo();
+  const practiceStatsLine = formatPracticeStatsForMemo();
   const recordingLine = recording
     ? `${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
     : "録音は別途送ります";
@@ -1194,6 +1270,7 @@ function buildTeacherReviewRequest() {
     `最近の採点：${scoreLine}`,
     `前回の先生コメント：${teacherCommentLine}`,
     `直近の練習：${practiceLine}`,
+    `練習ペース：${practiceStatsLine}`,
     `今の練習課題：${taskLine}`,
     "",
     "見ていただきたいこと：",

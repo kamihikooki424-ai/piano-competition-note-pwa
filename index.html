@@ -42,6 +42,8 @@
           <article><strong id="urgentCount">0</strong><span>締切間近</span></article>
           <article><strong id="taskDoneCount">0</strong><span>練習完了</span></article>
           <article><strong id="currentScoreLabel">-</strong><span>最新点</span></article>
+          <article><strong id="weeklyPracticeLabel">0分</strong><span>今週の練習</span></article>
+          <article><strong id="practiceStreakLabel">0日</strong><span>連続練習</span></article>
         </section>
 
         <section class="home-status-card">
@@ -75,6 +77,14 @@
           <strong>今日の練習</strong>
           <span id="todayPracticeLabel">練習指示を確認中</span>
           <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
+        </section>
+
+        <section class="week-practice-card">
+          <div>
+            <strong>今週の積み上げ</strong>
+            <span id="weeklyPracticeDetail">練習記録を集計中</span>
+          </div>
+          <div id="weeklyPracticeDays" class="week-days"></div>
         </section>
 
         <section class="backup-nudge-card" id="homeBackupNudge">

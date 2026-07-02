@@ -257,6 +257,51 @@ main { padding-top: 16px; }
 .notice-card strong, .today-card strong, .backup-nudge-card strong { color: var(--green); }
 .notice-card span, .today-card span, .backup-nudge-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
 
+.week-practice-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(39, 102, 123, .18);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,.94), rgba(250, 244, 232, .94));
+  padding: 14px;
+  box-shadow: 0 12px 30px rgba(18, 33, 31, .08);
+}
+.week-practice-card strong { display: block; color: var(--green); }
+.week-practice-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.week-days span {
+  display: grid;
+  min-width: 0;
+  min-height: 54px;
+  place-items: center;
+  border: 1px solid rgba(216, 227, 223, .9);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--muted);
+  text-align: center;
+}
+.week-days span.done {
+  border-color: rgba(184, 121, 47, .38);
+  background: #fff1d8;
+  color: var(--green);
+}
+.week-days em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 900;
+}
+.week-days strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: inherit;
+  font-size: 10px;
+  line-height: 1.15;
+}
+
 .setup-card {
   display: grid;
   gap: 12px;
