@@ -117,6 +117,23 @@
         <section class="tool-card">
           <div class="tool-heading">
             <div>
+              <h3>課題曲</h3>
+              <p>曲名・テンポ・注意点を管理</p>
+            </div>
+          </div>
+          <div class="piece-form">
+            <input id="pieceTitleInput" placeholder="曲名">
+            <input id="pieceComposerInput" placeholder="作曲者">
+            <input id="pieceTempoInput" inputmode="numeric" placeholder="目標テンポ">
+            <textarea id="pieceNoteInput" rows="2" placeholder="先生からの注意、曲の注意点"></textarea>
+            <button class="primary-button" id="addPieceButton" type="button">曲を追加</button>
+          </div>
+          <div id="pieceList" class="piece-list"></div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
               <h3>練習タイマー</h3>
               <p>短い集中練習を記録</p>
             </div>

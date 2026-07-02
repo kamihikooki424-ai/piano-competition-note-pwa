@@ -7,6 +7,7 @@ const RECORDING_STORE_NAME = "recordings";
 
 const state = {
   competitions: [],
+  pieces: [],
   tasks: [],
   practiceLogs: [],
   view: "homeView",
@@ -48,6 +49,7 @@ const els = {
   homeBackupNudgeText: $("#homeBackupNudgeText"),
   backupReminderText: $("#backupReminderText"),
   competitionList: $("#competitionList"),
+  pieceList: $("#pieceList"),
   taskList: $("#taskList"),
   practiceLogList: $("#practiceLogList"),
   bpmLabel: $("#bpmLabel"),
@@ -154,6 +156,7 @@ function load() {
     try {
       const parsed = JSON.parse(saved);
       state.competitions = parsed.competitions || [];
+      state.pieces = parsed.pieces || [];
       state.tasks = parsed.tasks || [];
       state.practiceLogs = parsed.practiceLogs || [];
       state.scores = parsed.scores || [];
@@ -178,6 +181,13 @@ function load() {
       venue: "市民文化ホール 小ホール",
       fee: "12000",
       memo: "申込ページ、支払い方法、当日の集合時間を確認する。"
+    }];
+    state.pieces = [{
+      id: createId(),
+      title: "貴婦人の乗馬",
+      composer: "ブルグミュラー",
+      tempo: "108",
+      note: "粒をそろえる。左手は軽く、メロディを前に出す。"
     }];
   }
 
@@ -234,6 +244,7 @@ function load() {
 function save() {
   localStorage.setItem(STORE_KEY, JSON.stringify({
     competitions: state.competitions,
+    pieces: state.pieces,
     tasks: state.tasks,
     practiceLogs: state.practiceLogs,
     scores: state.scores,
@@ -368,6 +379,7 @@ function toggleApplicationCheck(value) {
 function renderSetupCard() {
   const checks = [
     ["コンクール", state.competitions.length > 0],
+    ["曲", state.pieces.length > 0],
     ["練習指示", state.tasks.length > 0],
     ["練習記録", state.practiceLogs.length > 0],
     ["録音", state.recordings.length > 0],
@@ -390,6 +402,7 @@ function renderPractice() {
   els.bpmLabel.textContent = state.bpm;
   els.tempoSlider.value = String(state.bpm);
   els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+  renderPieces();
   renderPracticeLogs();
   if (state.tasks.length === 0) {
     els.taskList.innerHTML = `<div class="notice-card"><strong>練習指示はまだありません</strong><span>先生からの宿題や家庭での練習方法を追加できます。</span></div>`;
@@ -422,6 +435,28 @@ function renderPractice() {
   $$("[data-task-plus]").forEach((button) => button.addEventListener("click", () => updateTask(button.dataset.taskPlus, 1)));
   $$("[data-task-reset]").forEach((button) => button.addEventListener("click", () => resetTask(button.dataset.taskReset)));
   $$("[data-edit-task]").forEach((button) => button.addEventListener("click", () => openTaskDialog(button.dataset.editTask)));
+}
+
+function renderPieces() {
+  if (state.pieces.length === 0) {
+    els.pieceList.innerHTML = `<div class="notice-card"><strong>曲はまだありません</strong><span>課題曲や自由曲を追加すると、先生共有メモにも反映されます。</span></div>`;
+    return;
+  }
+
+  els.pieceList.innerHTML = state.pieces.map((piece) => `
+    <article class="piece-card">
+      <div>
+        <h3>${escapeHtml(piece.title)}</h3>
+        <span>${escapeHtml(piece.composer || "作曲者未設定")}${piece.tempo ? ` / 目標 ${escapeHtml(piece.tempo)} BPM` : ""}</span>
+      </div>
+      ${piece.note ? `<p>${escapeHtml(piece.note)}</p>` : ""}
+      <button class="mini-danger-button" data-delete-piece="${piece.id}">削除</button>
+    </article>
+  `).join("");
+
+  $$("[data-delete-piece]").forEach((button) => {
+    button.addEventListener("click", () => deletePiece(button.dataset.deletePiece));
+  });
 }
 
 function renderPracticeLogs() {
@@ -630,6 +665,32 @@ function getTaskDoneSummary() {
   if (state.tasks.length === 0) return "練習指示なし";
   const done = state.tasks.filter((task) => task.count >= Math.max(1, Number(task.target || 1))).length;
   return `${done}/${state.tasks.length}項目完了`;
+}
+
+function addPiece() {
+  const title = $("#pieceTitleInput").value.trim();
+  if (!title) return;
+  state.isSampleData = false;
+  state.pieces.unshift({
+    id: createId(),
+    title,
+    composer: $("#pieceComposerInput").value.trim(),
+    tempo: $("#pieceTempoInput").value.trim(),
+    note: $("#pieceNoteInput").value.trim()
+  });
+  $("#pieceTitleInput").value = "";
+  $("#pieceComposerInput").value = "";
+  $("#pieceTempoInput").value = "";
+  $("#pieceNoteInput").value = "";
+  save();
+  render();
+}
+
+function deletePiece(id) {
+  if (!confirm("この曲を削除しますか？")) return;
+  state.pieces = state.pieces.filter((piece) => piece.id !== id);
+  save();
+  render();
 }
 
 function addTask() {
@@ -844,6 +905,7 @@ function buildTeacherMemo() {
     .sort((a, b) => (daysUntil(a.eventDate) ?? 9999) - (daysUntil(b.eventDate) ?? 9999))[0];
   const latestTeacherScore = getSortedScores().reverse().find((score) => score.type === "teacher");
   const latestScore = latestTeacherScore || getLatestScore();
+  const pieces = state.pieces.slice(0, 4);
   const openTasks = state.tasks.filter((task) => task.count < task.target).slice(0, 5);
   const recentPracticeLogs = [...state.practiceLogs].reverse().slice(0, 3);
   const importantRecordings = state.recordings.filter((recording) => recording.favorite).slice(0, 3);
@@ -858,6 +920,11 @@ function buildTeacherMemo() {
       ? `${nextCompetition.name} / ${nextCompetition.division || "部門未設定"} / 本番 ${formatDate(nextCompetition.eventDate)} / 申込締切 ${formatDate(nextCompetition.deadline)}`
       : "未登録",
     nextCompetition ? `申込手続き：${getApplicationCheckSummary(nextCompetition)}` : "",
+    "",
+    "■ 曲",
+    ...(pieces.length
+      ? pieces.map((piece) => `・${piece.title}${piece.composer ? ` / ${piece.composer}` : ""}${piece.tempo ? ` / 目標${piece.tempo}BPM` : ""}${piece.note ? `：${piece.note}` : ""}`)
+      : ["曲未登録"]),
     "",
     "■ 最新採点",
     latestScore
@@ -892,6 +959,7 @@ function buildTeacherReviewRequest() {
     .filter((competition) => daysUntil(competition.eventDate) === null || daysUntil(competition.eventDate) >= 0)
     .sort((a, b) => (daysUntil(a.eventDate) ?? 9999) - (daysUntil(b.eventDate) ?? 9999))[0];
   const latestScore = getLatestScore();
+  const currentPiece = state.pieces[0];
   const nextTask = state.tasks.find((task) => task.count < task.target);
   const latestPracticeLog = state.practiceLogs.at(-1);
   const recording = state.recordings.find((item) => item.favorite) || state.recordings[0];
@@ -901,6 +969,9 @@ function buildTeacherReviewRequest() {
   const scoreLine = latestScore
     ? `${formatDate(latestScore.date)} ${latestScore.total}点（${scoreTypeLabel(latestScore.type)}）`
     : "採点未登録";
+  const pieceLine = currentPiece
+    ? `${currentPiece.title}${currentPiece.composer ? ` / ${currentPiece.composer}` : ""}${currentPiece.tempo ? ` / 目標${currentPiece.tempo}BPM` : ""}`
+    : "曲未登録";
   const taskLine = nextTask
     ? `${nextTask.title}：${nextTask.count}/${nextTask.target}回 - ${nextTask.detail || "詳細なし"}`
     : "未完了課題なし";
@@ -915,6 +986,7 @@ function buildTeacherReviewRequest() {
     "先生、録音チェックをお願いします。",
     "",
     `コンクール：${competitionLine}`,
+    `曲：${pieceLine}`,
     `確認してほしい録音：${recordingLine}`,
     `最近の採点：${scoreLine}`,
     `直近の練習：${practiceLine}`,
@@ -1093,6 +1165,7 @@ function startOnboarding() {
 function startPersonalSetup() {
   if (state.isSampleData) {
     state.competitions = [];
+    state.pieces = [];
     state.tasks = [];
     state.practiceLogs = [];
     state.scores = [];
@@ -1488,6 +1561,7 @@ function getStorageReportItems() {
   const unsavedCount = getUnsavedRecordingCount();
   return [
     ["コンクール", `${state.competitions.length}件`],
+    ["曲", `${state.pieces.length}件`],
     ["練習指示", `${state.tasks.length}件`],
     ["練習記録", `${state.practiceLogs.length}件`],
     ["採点", `${state.scores.length}件`],
@@ -1523,6 +1597,7 @@ function copyStorageReport() {
 function exportData() {
   const blob = new Blob([JSON.stringify({
     competitions: state.competitions,
+    pieces: state.pieces,
     tasks: state.tasks,
     practiceLogs: state.practiceLogs,
     scores: state.scores,
@@ -1550,6 +1625,7 @@ function importData(file) {
     try {
       const data = JSON.parse(String(reader.result));
       state.competitions = Array.isArray(data.competitions) ? data.competitions : [];
+      state.pieces = Array.isArray(data.pieces) ? data.pieces : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
       state.practiceLogs = Array.isArray(data.practiceLogs) ? data.practiceLogs : [];
       state.scores = Array.isArray(data.scores) ? data.scores : [];
@@ -1591,6 +1667,7 @@ async function clearAllData() {
   }
 
   state.competitions = [];
+  state.pieces = [];
   state.tasks = [];
   state.practiceLogs = [];
   state.scores = [];
@@ -1620,6 +1697,7 @@ function bind() {
   });
   els.timerStartButton.addEventListener("click", togglePracticeTimer);
   els.timerResetButton.addEventListener("click", resetPracticeTimer);
+  $("#addPieceButton").addEventListener("click", addPiece);
   $("#addTaskButton").addEventListener("click", addTask);
   $("#savePracticeLogButton").addEventListener("click", savePracticeLog);
   $("#closeTaskDialog").addEventListener("click", () => els.taskDialog.close());

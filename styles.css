@@ -283,7 +283,7 @@ main { padding-top: 16px; }
 .section-heading { margin-top: 4px; }
 .section-heading p { margin-top: 4px; color: var(--muted); font-size: 12px; }
 
-.card-list, .task-list, .recording-list { display: grid; gap: 10px; }
+.card-list, .task-list, .recording-list, .piece-list { display: grid; gap: 10px; }
 
 .competition-card {
   position: relative;
@@ -628,6 +628,18 @@ input:focus, textarea:focus, select:focus {
   min-height: 176px;
 }
 
+.piece-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 104px;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.piece-form textarea,
+.piece-form button {
+  grid-column: 1 / -1;
+}
+
 .backup-steps,
 .feedback-list,
 .practice-log-list {
@@ -665,7 +677,8 @@ input:focus, textarea:focus, select:focus {
 
 .backup-steps div,
 .feedback-card,
-.practice-log-card {
+.practice-log-card,
+.piece-card {
   position: relative;
   display: grid;
   gap: 7px;
@@ -694,7 +707,9 @@ input:focus, textarea:focus, select:focus {
 .feedback-card span,
 .feedback-card p,
 .practice-log-card span,
-.practice-log-card p {
+.practice-log-card p,
+.piece-card span,
+.piece-card p {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
@@ -718,16 +733,19 @@ input:focus, textarea:focus, select:focus {
 }
 
 .feedback-card strong,
-.practice-log-card strong {
+.practice-log-card strong,
+.piece-card h3 {
   color: var(--green);
 }
 
-.practice-log-card p {
+.practice-log-card p,
+.piece-card p {
   padding-right: 56px;
 }
 
 .feedback-card .mini-danger-button,
-.practice-log-card .mini-danger-button {
+.practice-log-card .mini-danger-button,
+.piece-card .mini-danger-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -931,6 +949,7 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
   .setup-checks, .setup-actions { grid-template-columns: 1fr; }
   .application-checks div { grid-template-columns: 1fr; }
+  .piece-form { grid-template-columns: 1fr; }
   .quick-start-card { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .score-panel { grid-template-columns: 1fr; }
