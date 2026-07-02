@@ -28,8 +28,8 @@
         <section class="hero-panel">
           <div>
             <p id="todayLabel" class="hero-date"></p>
-            <h2 id="nextDeadlineLabel">次の締切を確認中</h2>
-            <p>コンクール、先生の練習指示、録音を端末内に保存します。</p>
+            <h2>今日のピアノ</h2>
+            <p id="nextDeadlineLabel">次の締切を確認中</p>
           </div>
           <img class="hero-illustration" src="assets/piano-practice-illustration.webp" alt="" aria-hidden="true">
           <div class="hero-keyboard" aria-hidden="true">
@@ -37,52 +37,9 @@
           </div>
         </section>
 
-        <section class="summary-grid">
-          <article><strong id="competitionCount">0</strong><span>コンクール</span></article>
-          <article><strong id="urgentCount">0</strong><span>締切間近</span></article>
-          <article><strong id="taskDoneCount">0</strong><span>練習完了</span></article>
-          <article><strong id="currentScoreLabel">-</strong><span>最新点</span></article>
-          <article><strong id="weeklyPracticeLabel">0分</strong><span>今週の練習</span></article>
-          <article><strong id="practiceStreakLabel">0日</strong><span>連続練習</span></article>
-          <article><strong id="readinessScoreLabel">0%</strong><span>本番準備度</span></article>
-        </section>
-
-        <section class="home-status-card">
-          <div class="tool-heading">
-            <div>
-              <h2>最新状況</h2>
-              <p>今日見るところ</p>
-            </div>
-          </div>
-          <div id="homeStatusList" class="home-status-list"></div>
-        </section>
-
-        <section class="notice-card">
-          <strong>完全無料モード</strong>
-          <span>データはこのスマホ内に保存されます。サーバー、DB、月額課金は使いません。</span>
-        </section>
-
-        <section class="setup-card" id="setupCard">
-          <div>
-            <strong id="setupTitle">セットアップ</strong>
-            <span id="setupSummary">状態を確認中です。</span>
-          </div>
-          <div class="setup-checks" id="setupChecks"></div>
-          <div class="setup-actions">
-            <button class="primary-button" id="startPersonalSetupButton" type="button">自分用に始める</button>
-            <button class="secondary-button" id="showSetupGuideButton" type="button">初回案内</button>
-          </div>
-        </section>
-
-        <section class="today-card">
-          <strong>今日の練習</strong>
-          <span id="todayPracticeLabel">練習指示を確認中</span>
-          <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
-        </section>
-
         <section class="home-mission-card" id="homeMissionCard">
           <div>
-            <strong>今日のミッション</strong>
+            <strong>きょうやること</strong>
             <span id="homeMissionTitle">練習課題を確認中</span>
           </div>
           <div class="mission-progress"><span id="homeMissionBar"></span></div>
@@ -113,64 +70,112 @@
           <div class="stamp-days" id="stampCardDays"></div>
         </section>
 
-        <section class="week-practice-card">
-          <div>
-            <strong>今週の積み上げ</strong>
-            <span id="weeklyPracticeDetail">練習記録を集計中</span>
-          </div>
-          <div id="weeklyPracticeDays" class="week-days"></div>
-        </section>
-
-        <section class="readiness-card">
-          <div class="readiness-head">
-            <div>
-              <strong>本番準備ナビ</strong>
-              <span id="readinessDetail">準備状況を確認中</span>
-            </div>
-            <div class="readiness-score"><strong id="readinessHeroScore">0%</strong><span>準備度</span></div>
-          </div>
-          <div class="readiness-bar"><span id="readinessBar"></span></div>
-          <div id="nextActionList" class="next-action-list"></div>
-        </section>
-
-        <section class="backup-nudge-card" id="homeBackupNudge">
-          <strong>バックアップ</strong>
-          <span id="homeBackupNudgeText">確認中です。</span>
-          <button class="text-button" data-view-shortcut="settingsView">設定へ</button>
-        </section>
-
-        <section class="trial-share-card">
-          <div>
-            <strong>試してもらう</strong>
-            <span>無料公開URLをコピーして、保護者・先生に渡せます。</span>
-          </div>
-          <div class="trial-share-actions">
-            <button class="secondary-button" id="copyPublicUrlButton" type="button">URLコピー</button>
-            <button class="text-button" data-view-shortcut="settingsView" type="button">案内文へ</button>
-          </div>
-        </section>
-
         <section class="quick-start-card">
-          <button data-view-shortcut="practiceView"><span>1</span>練習指示</button>
-          <button data-view-shortcut="recordView"><span>2</span>録音する</button>
-          <button data-view-shortcut="growthView"><span>3</span>採点する</button>
+          <button data-view-shortcut="practiceView"><span>1</span>れんしゅう</button>
+          <button data-view-shortcut="recordView"><span>2</span>ろくおん</button>
+          <button data-view-shortcut="growthView"><span>3</span>せいちょう</button>
         </section>
 
-        <div class="section-heading">
-          <div>
-            <h2>コンクール</h2>
-            <p>申込締切の前日・当日にアプリ内で知らせます。</p>
+        <details class="parent-menu">
+          <summary>保護者・先生メニュー</summary>
+          <div class="parent-menu-body">
+            <section class="setup-card" id="setupCard">
+              <div>
+                <strong id="setupTitle">セットアップ</strong>
+                <span id="setupSummary">状態を確認中です。</span>
+              </div>
+              <div class="setup-checks" id="setupChecks"></div>
+              <div class="setup-actions">
+                <button class="primary-button" id="startPersonalSetupButton" type="button">自分用に始める</button>
+                <button class="secondary-button" id="showSetupGuideButton" type="button">初回案内</button>
+              </div>
+            </section>
+
+            <section class="summary-grid">
+              <article><strong id="competitionCount">0</strong><span>コンクール</span></article>
+              <article><strong id="urgentCount">0</strong><span>締切間近</span></article>
+              <article><strong id="taskDoneCount">0</strong><span>練習完了</span></article>
+              <article><strong id="currentScoreLabel">-</strong><span>最新点</span></article>
+              <article><strong id="weeklyPracticeLabel">0分</strong><span>今週の練習</span></article>
+              <article><strong id="practiceStreakLabel">0日</strong><span>連続練習</span></article>
+              <article><strong id="readinessScoreLabel">0%</strong><span>本番準備度</span></article>
+            </section>
+
+            <section class="today-card">
+              <strong>今日の練習</strong>
+              <span id="todayPracticeLabel">練習指示を確認中</span>
+              <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
+            </section>
+
+            <section class="home-status-card">
+              <div class="tool-heading">
+                <div>
+                  <h2>最新状況</h2>
+                  <p>今日見るところ</p>
+                </div>
+              </div>
+              <div id="homeStatusList" class="home-status-list"></div>
+            </section>
+
+            <section class="notice-card">
+              <strong>完全無料モード</strong>
+              <span>データはこのスマホ内に保存されます。サーバー、DB、月額課金は使いません。</span>
+            </section>
+
+            <section class="week-practice-card">
+              <div>
+                <strong>今週の積み上げ</strong>
+                <span id="weeklyPracticeDetail">練習記録を集計中</span>
+              </div>
+              <div id="weeklyPracticeDays" class="week-days"></div>
+            </section>
+
+            <section class="readiness-card">
+              <div class="readiness-head">
+                <div>
+                  <strong>本番準備ナビ</strong>
+                  <span id="readinessDetail">準備状況を確認中</span>
+                </div>
+                <div class="readiness-score"><strong id="readinessHeroScore">0%</strong><span>準備度</span></div>
+              </div>
+              <div class="readiness-bar"><span id="readinessBar"></span></div>
+              <div id="nextActionList" class="next-action-list"></div>
+            </section>
+
+            <section class="backup-nudge-card" id="homeBackupNudge">
+              <strong>バックアップ</strong>
+              <span id="homeBackupNudgeText">確認中です。</span>
+              <button class="text-button" data-view-shortcut="settingsView">設定へ</button>
+            </section>
+
+            <section class="trial-share-card">
+              <div>
+                <strong>試してもらう</strong>
+                <span>無料公開URLをコピーして、保護者・先生に渡せます。</span>
+              </div>
+              <div class="trial-share-actions">
+                <button class="secondary-button" id="copyPublicUrlButton" type="button">URLコピー</button>
+                <button class="text-button" data-view-shortcut="settingsView" type="button">案内文へ</button>
+              </div>
+            </section>
+
+            <div class="section-heading">
+              <div>
+                <h2>コンクール</h2>
+                <p>申込締切の前日・当日にアプリ内で知らせます。</p>
+              </div>
+            </div>
+            <section id="competitionList" class="card-list"></section>
           </div>
-        </div>
-        <section id="competitionList" class="card-list"></section>
+        </details>
       </section>
 
       <section class="view" id="practiceView">
         <section class="studio-panel">
           <div>
-            <p class="eyebrow">Metronome</p>
-            <h2>今日の練習を刻む</h2>
-            <p>先生の指示を回数で管理します。</p>
+            <p class="eyebrow">Practice</p>
+            <h2>れんしゅう</h2>
+            <p>できたらボタンを押します。</p>
           </div>
           <div class="tempo-display"><strong id="bpmLabel">84</strong><span>BPM</span></div>
         </section>
@@ -193,86 +198,91 @@
           </div>
         </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>メトロノーム</h3>
-              <p>拍感・テンポ練習用</p>
-            </div>
-            <button class="pill-button" id="metronomeButton">開始</button>
-          </div>
-          <div class="tempo-control">
-            <button id="tempoDown">−</button>
-            <input id="tempoSlider" type="range" min="40" max="180" value="84" aria-label="テンポ">
-            <button id="tempoUp">＋</button>
-          </div>
-          <div class="beat-row" id="beatRow"><span></span><span></span><span></span><span></span></div>
-        </section>
+        <details class="parent-menu practice-menu">
+          <summary>練習の設定</summary>
+          <div class="parent-menu-body">
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>メトロノーム</h3>
+                  <p>拍感・テンポ練習用</p>
+                </div>
+                <button class="pill-button" id="metronomeButton">開始</button>
+              </div>
+              <div class="tempo-control">
+                <button id="tempoDown">−</button>
+                <input id="tempoSlider" type="range" min="40" max="180" value="84" aria-label="テンポ">
+                <button id="tempoUp">＋</button>
+              </div>
+              <div class="beat-row" id="beatRow"><span></span><span></span><span></span><span></span></div>
+            </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>課題曲</h3>
-              <p>曲名・テンポ・注意点を管理</p>
-            </div>
-          </div>
-          <div class="piece-form">
-            <input id="pieceTitleInput" placeholder="曲名">
-            <input id="pieceComposerInput" placeholder="作曲者">
-            <input id="pieceTempoInput" inputmode="numeric" placeholder="目標テンポ">
-            <textarea id="pieceNoteInput" rows="2" placeholder="先生からの注意、曲の注意点"></textarea>
-            <button class="primary-button" id="addPieceButton" type="button">曲を追加</button>
-          </div>
-          <div id="pieceList" class="piece-list"></div>
-        </section>
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>課題曲</h3>
+                  <p>曲名・テンポ・注意点を管理</p>
+                </div>
+              </div>
+              <div class="piece-form">
+                <input id="pieceTitleInput" placeholder="曲名">
+                <input id="pieceComposerInput" placeholder="作曲者">
+                <input id="pieceTempoInput" inputmode="numeric" placeholder="目標テンポ">
+                <textarea id="pieceNoteInput" rows="2" placeholder="先生からの注意、曲の注意点"></textarea>
+                <button class="primary-button" id="addPieceButton" type="button">曲を追加</button>
+              </div>
+              <div id="pieceList" class="piece-list"></div>
+            </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>練習タイマー</h3>
-              <p>短い集中練習を記録</p>
-            </div>
-            <strong class="timer-display" id="practiceTimerLabel">15:00</strong>
-          </div>
-          <div class="timer-actions">
-            <button class="secondary-button" data-timer-minutes="10">10分</button>
-            <button class="secondary-button" data-timer-minutes="15">15分</button>
-            <button class="secondary-button" data-timer-minutes="30">30分</button>
-          </div>
-          <div class="timer-actions">
-            <button class="pill-button" id="timerStartButton">開始</button>
-            <button class="secondary-button" id="timerResetButton">リセット</button>
-          </div>
-        </section>
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>練習タイマー</h3>
+                  <p>短い集中練習を記録</p>
+                </div>
+                <strong class="timer-display" id="practiceTimerLabel">15:00</strong>
+              </div>
+              <div class="timer-actions">
+                <button class="secondary-button" data-timer-minutes="10">10分</button>
+                <button class="secondary-button" data-timer-minutes="15">15分</button>
+                <button class="secondary-button" data-timer-minutes="30">30分</button>
+              </div>
+              <div class="timer-actions">
+                <button class="pill-button" id="timerStartButton">開始</button>
+                <button class="secondary-button" id="timerResetButton">リセット</button>
+              </div>
+            </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>先生の練習指示</h3>
-              <p>できた回数を記録</p>
-            </div>
-          </div>
-          <div class="inline-form">
-            <input id="taskTitleInput" placeholder="例：右手だけ5回">
-            <button id="addTaskButton">追加</button>
-          </div>
-          <div id="taskList" class="task-list"></div>
-        </section>
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>先生の練習指示</h3>
+                  <p>できた回数を記録</p>
+                </div>
+              </div>
+              <div class="inline-form">
+                <input id="taskTitleInput" placeholder="例：右手だけ5回">
+                <button id="addTaskButton">追加</button>
+              </div>
+              <div id="taskList" class="task-list"></div>
+            </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>今日の練習記録</h3>
-              <p>何分・何を練習したかを残す</p>
-            </div>
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>今日の練習記録</h3>
+                  <p>何分・何を練習したかを残す</p>
+                </div>
+              </div>
+              <div class="practice-log-form">
+                <label>練習時間<input id="practiceMinutesInput" type="number" min="1" max="240" value="15">分</label>
+                <label>今日やったこと<textarea id="practiceLogMemoInput" rows="3" placeholder="例：右手だけ、最後の4小節、録音して聴き返し"></textarea></label>
+                <button class="primary-button" id="savePracticeLogButton" type="button">今日の練習を保存</button>
+              </div>
+              <div id="practiceLogList" class="practice-log-list"></div>
+            </section>
           </div>
-          <div class="practice-log-form">
-            <label>練習時間<input id="practiceMinutesInput" type="number" min="1" max="240" value="15">分</label>
-            <label>今日やったこと<textarea id="practiceLogMemoInput" rows="3" placeholder="例：右手だけ、最後の4小節、録音して聴き返し"></textarea></label>
-            <button class="primary-button" id="savePracticeLogButton" type="button">今日の練習を保存</button>
-          </div>
-          <div id="practiceLogList" class="practice-log-list"></div>
-        </section>
+        </details>
       </section>
 
       <section class="view" id="recordView">
