@@ -2,6 +2,7 @@ const STORE_KEY = "piano-note-zero-cost-v1";
 const REMINDER_KEY = "piano-note-reminders-v1";
 const BACKUP_KEY = "piano-note-last-backup-v1";
 const ONBOARDING_KEY = "piano-note-onboarding-seen-v1";
+const PUBLIC_APP_URL = "https://kamihikooki424-ai.github.io/piano-competition-note-pwa/";
 const RECORDING_DB_NAME = "piano-note-recordings-v1";
 const RECORDING_STORE_NAME = "recordings";
 
@@ -71,6 +72,7 @@ const els = {
   readinessHeroScore: $("#readinessHeroScore"),
   readinessBar: $("#readinessBar"),
   nextActionList: $("#nextActionList"),
+  copyPublicUrlButton: $("#copyPublicUrlButton"),
   kidPracticeTitle: $("#kidPracticeTitle"),
   kidPracticeDetail: $("#kidPracticeDetail"),
   kidPracticeCount: $("#kidPracticeCount"),
@@ -1624,7 +1626,7 @@ function buildTrialInvite() {
   const trialItems = trialCheckDefinitions().map(([, title]) => `・${title}`);
   return [
     "【ピアノコンクールノート 試用URL】",
-    "https://kamihikooki424-ai.github.io/piano-competition-note-pwa/",
+    PUBLIC_APP_URL,
     "",
     "■ 使い始め",
     "1. スマホでURLを開く",
@@ -1784,6 +1786,10 @@ function copyTrialInvite() {
   const text = buildTrialInvite();
   els.trialInviteOutput.value = text;
   copyText(text, $("#copyTrialInviteButton"));
+}
+
+function copyPublicUrl() {
+  copyText(PUBLIC_APP_URL, els.copyPublicUrlButton);
 }
 
 function copyFeedbackSummary() {
@@ -2379,6 +2385,7 @@ function bind() {
   els.homeMissionDoneButton.addEventListener("click", completeHomeMission);
   $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
   $("#copyTeacherReviewButton").addEventListener("click", copyTeacherReviewRequest);
+  els.copyPublicUrlButton.addEventListener("click", copyPublicUrl);
   $("#copyStorageReportButton").addEventListener("click", copyStorageReport);
   $("#copyTrialInviteButton").addEventListener("click", copyTrialInvite);
   $("#saveFeedbackButton").addEventListener("click", saveFeedback);

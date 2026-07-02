@@ -231,7 +231,7 @@ main { padding-top: 16px; }
   line-height: 1.45;
 }
 
-.notice-card, .today-card, .backup-nudge-card {
+.notice-card, .today-card, .backup-nudge-card, .trial-share-card {
   display: grid;
   gap: 4px;
   border-color: rgba(184, 121, 47, .32);
@@ -239,7 +239,7 @@ main { padding-top: 16px; }
   padding: 14px;
 }
 
-.today-card, .backup-nudge-card {
+.today-card, .backup-nudge-card, .trial-share-card {
   grid-template-columns: 1fr auto;
   align-items: center;
   border: 1px solid rgba(39, 102, 123, .22);
@@ -251,11 +251,26 @@ main { padding-top: 16px; }
 .today-card strong,
 .today-card span,
 .backup-nudge-card strong,
-.backup-nudge-card span { grid-column: 1; }
+.backup-nudge-card span,
+.trial-share-card strong,
+.trial-share-card span { grid-column: 1; }
 .today-card .text-button,
 .backup-nudge-card .text-button { grid-column: 2; grid-row: 1 / span 2; }
-.notice-card strong, .today-card strong, .backup-nudge-card strong { color: var(--green); }
-.notice-card span, .today-card span, .backup-nudge-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
+.notice-card strong, .today-card strong, .backup-nudge-card strong, .trial-share-card strong { color: var(--green); }
+.notice-card span, .today-card span, .backup-nudge-card span, .trial-share-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
+.trial-share-actions {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 8px;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.trial-share-actions .secondary-button,
+.trial-share-actions .text-button {
+  min-height: 40px;
+  white-space: nowrap;
+}
 
 .practice-sticker-card {
   display: grid;
@@ -1425,8 +1440,9 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
     height: 122px;
     opacity: .88;
   }
-  .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
-  .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
+  .today-card, .backup-nudge-card, .trial-share-card { grid-template-columns: 1fr; }
+  .today-card .text-button, .backup-nudge-card .text-button, .trial-share-actions { grid-column: 1; grid-row: auto; }
+  .trial-share-actions { grid-template-columns: 1fr 1fr; }
   .mission-actions { grid-template-columns: 1fr; }
   .kid-practice-card h3 { max-width: 100%; font-size: 22px; }
   .kid-practice-actions { grid-template-columns: 1fr 1fr; }
