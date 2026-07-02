@@ -936,13 +936,51 @@ function renderTeacherComments() {
       </div>
       <p>${escapeHtml(comment.body || "コメントなし")}</p>
       ${comment.next ? `<p class="next-note">次：${escapeHtml(comment.next)}</p>` : ""}
-      <button class="mini-danger-button" data-delete-teacher-comment="${comment.id}">削除</button>
+      <div class="teacher-comment-actions">
+        <button class="mini-action-button ${isTeacherCommentTaskActive(comment) ? "saved" : ""}" data-task-from-teacher-comment="${comment.id}">
+          ${isTeacherCommentTaskActive(comment) ? "課題追加済み" : "課題に追加"}
+        </button>
+        <button class="mini-danger-button" data-delete-teacher-comment="${comment.id}">削除</button>
+      </div>
     </article>
   `).join("");
+
+  $$("[data-task-from-teacher-comment]").forEach((button) => {
+    button.addEventListener("click", () => createTaskFromTeacherComment(button.dataset.taskFromTeacherComment));
+  });
 
   $$("[data-delete-teacher-comment]").forEach((button) => {
     button.addEventListener("click", () => deleteTeacherComment(button.dataset.deleteTeacherComment));
   });
+}
+
+function isTeacherCommentTaskActive(comment) {
+  return Boolean(comment.taskId && state.tasks.some((task) => task.id === comment.taskId));
+}
+
+function createTaskFromTeacherComment(id) {
+  const comment = state.teacherComments.find((item) => item.id === id);
+  if (!comment) return;
+  if (isTeacherCommentTaskActive(comment)) {
+    setView("practiceView");
+    return;
+  }
+  const sourceText = (comment.next || comment.body || "先生からの課題").trim();
+  const taskId = createId();
+  const title = sourceText.length > 26 ? `${sourceText.slice(0, 26)}...` : sourceText;
+  state.isSampleData = false;
+  state.tasks.unshift({
+    id: taskId,
+    title,
+    detail: `先生コメント ${formatDate(comment.date)}：${sourceText}`,
+    target: 5,
+    count: 0,
+    source: "teacherComment"
+  });
+  state.teacherComments = state.teacherComments.map((item) => item.id === id ? { ...item, taskId } : item);
+  save();
+  render();
+  setView("practiceView");
 }
 
 function formatShortDate(value) {

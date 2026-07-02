@@ -952,6 +952,20 @@ input:focus, textarea:focus, select:focus {
   right: 10px;
 }
 
+.teacher-comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.teacher-comment-card .teacher-comment-actions .mini-action-button,
+.teacher-comment-card .teacher-comment-actions .mini-danger-button {
+  position: static;
+}
+.teacher-comment-card p {
+  padding-right: 0;
+}
+
 .onboarding-panel {
   gap: 14px;
 }
