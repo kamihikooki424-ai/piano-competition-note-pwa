@@ -53,6 +53,11 @@ const els = {
   readinessScoreLabel: $("#readinessScoreLabel"),
   homeStatusList: $("#homeStatusList"),
   todayPracticeLabel: $("#todayPracticeLabel"),
+  homeMissionCard: $("#homeMissionCard"),
+  homeMissionTitle: $("#homeMissionTitle"),
+  homeMissionDetail: $("#homeMissionDetail"),
+  homeMissionBar: $("#homeMissionBar"),
+  homeMissionDoneButton: $("#homeMissionDoneButton"),
   practiceStickerMark: $("#practiceStickerMark"),
   practiceStickerTitle: $("#practiceStickerTitle"),
   practiceStickerText: $("#practiceStickerText"),
@@ -233,6 +238,37 @@ function renderPracticeSticker() {
   els.practiceStickerText.textContent = practicedToday
     ? `よくできました。連続${stats.streak}日です。`
     : "練習記録をつけると、今日のシールがつきます。";
+}
+
+function getNextOpenTask() {
+  return state.tasks.find((task) => Number(task.count || 0) < Math.max(1, Number(task.target || 1))) || null;
+}
+
+function renderHomeMission() {
+  const task = getNextOpenTask();
+  if (!task) {
+    els.homeMissionCard.style.display = state.tasks.length ? "" : "none";
+    if (state.tasks.length) {
+      els.homeMissionTitle.textContent = "今日の課題は完了";
+      els.homeMissionDetail.textContent = "録音して聴き返すか、練習記録を残しましょう。";
+      els.homeMissionBar.style.width = "100%";
+      els.homeMissionDoneButton.disabled = true;
+      els.homeMissionDoneButton.textContent = "完了";
+      delete els.homeMissionDoneButton.dataset.homeTaskId;
+    }
+    return;
+  }
+  const target = Math.max(1, Number(task.target || 1));
+  const count = Math.max(0, Number(task.count || 0));
+  const remaining = Math.max(0, target - count);
+  const percent = Math.min(100, Math.round((count / target) * 100));
+  els.homeMissionCard.style.display = "";
+  els.homeMissionTitle.textContent = task.title || "練習する";
+  els.homeMissionDetail.textContent = `あと${remaining}回。${task.detail || "ゆっくり、ていねいに弾きましょう。"}`;
+  els.homeMissionBar.style.width = `${percent}%`;
+  els.homeMissionDoneButton.disabled = false;
+  els.homeMissionDoneButton.textContent = "できた";
+  els.homeMissionDoneButton.dataset.homeTaskId = task.id;
 }
 
 function formatPracticeStatsForMemo() {
@@ -527,6 +563,7 @@ function renderHome() {
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。録音して聴き返しましょう。";
+  renderHomeMission();
   renderPracticeStats();
   renderPracticeSticker();
   renderReadinessStatus();
@@ -1065,6 +1102,12 @@ function resetTask(id) {
   state.tasks = state.tasks.map((task) => task.id === id ? { ...task, count: 0 } : task);
   save();
   render();
+}
+
+function completeHomeMission() {
+  const id = els.homeMissionDoneButton.dataset.homeTaskId;
+  if (!id) return;
+  updateTask(id, 1);
 }
 
 function getTaskDoneSummary() {
@@ -2239,6 +2282,7 @@ function bind() {
   $("#cancelScoreEditButton").addEventListener("click", resetScoreForm);
   $("#addScoreButton").addEventListener("click", saveScore);
   $("#saveTeacherCommentButton").addEventListener("click", saveTeacherComment);
+  els.homeMissionDoneButton.addEventListener("click", completeHomeMission);
   $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
   $("#copyTeacherReviewButton").addEventListener("click", copyTeacherReviewRequest);
   $("#copyStorageReportButton").addEventListener("click", copyStorageReport);

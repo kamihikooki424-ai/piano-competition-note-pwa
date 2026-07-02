@@ -282,6 +282,52 @@ main { padding-top: 16px; }
 .practice-sticker-card strong { display: block; color: var(--green); }
 .practice-sticker-card span { color: #5b432b; font-size: 13px; line-height: 1.5; }
 
+.home-mission-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(39, 102, 123, .2);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px;
+  box-shadow: 0 12px 30px rgba(18, 33, 31, .08);
+}
+.home-mission-card strong { display: block; color: var(--green); font-size: 16px; }
+.home-mission-card span,
+.home-mission-card p { color: #5b432b; font-size: 13px; line-height: 1.5; }
+.mission-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(216, 227, 223, .85);
+}
+.mission-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--gold));
+}
+.mission-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+.mission-done-button {
+  min-height: 56px;
+  border-radius: 16px;
+  background: var(--green);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  box-shadow: inset 0 -4px 0 rgba(184, 121, 47, .5);
+}
+.mission-done-button:disabled {
+  background: #d8e3df;
+  color: var(--muted);
+  box-shadow: none;
+}
+
 .week-practice-card {
   display: grid;
   gap: 12px;
@@ -1201,6 +1247,7 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   }
   .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
   .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
+  .mission-actions { grid-template-columns: 1fr; }
   .practice-sticker-card { grid-template-columns: auto 1fr; }
   .practice-sticker-card .text-button { grid-column: 1 / -1; }
   .readiness-head { grid-template-columns: 1fr; }
