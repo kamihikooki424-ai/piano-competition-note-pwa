@@ -16,6 +16,7 @@ const state = {
   pieces: [],
   tasks: [],
   practiceLogs: [],
+  practiceStamps: {},
   view: "homeView",
   bpm: 84,
   beat: 0,
@@ -211,6 +212,18 @@ function getPracticeStats() {
   return { last7Days, weeklyMinutes, practicedDays, streak };
 }
 
+function hasPracticeStamp(date = todayKey()) {
+  return Boolean(state.practiceStamps?.[date]);
+}
+
+function addPracticeStamp(date = todayKey()) {
+  state.practiceStamps = { ...(state.practiceStamps || {}), [date]: true };
+}
+
+function getPracticeStampCount() {
+  return Object.values(state.practiceStamps || {}).filter(Boolean).length;
+}
+
 function renderPracticeStats() {
   const stats = getPracticeStats();
   els.weeklyPracticeLabel.textContent = formatMinutes(stats.weeklyMinutes);
@@ -232,11 +245,11 @@ function renderPracticeStats() {
 
 function renderPracticeSticker() {
   const stats = getPracticeStats();
-  const practicedToday = Boolean(stats.last7Days.at(-1)?.practiced);
+  const practicedToday = Boolean(stats.last7Days.at(-1)?.practiced || hasPracticeStamp());
   els.practiceStickerMark.textContent = practicedToday ? "★" : "○";
   els.practiceStickerTitle.textContent = practicedToday ? "今日のシール獲得" : "今日のシール";
   els.practiceStickerText.textContent = practicedToday
-    ? `よくできました。連続${stats.streak}日です。`
+    ? `よくできました。シール${getPracticeStampCount()}枚です。`
     : "練習記録をつけると、今日のシールがつきます。";
 }
 
@@ -414,6 +427,7 @@ function load() {
       state.pieces = parsed.pieces || [];
       state.tasks = parsed.tasks || [];
       state.practiceLogs = parsed.practiceLogs || [];
+      state.practiceStamps = parsed.practiceStamps || {};
       state.scores = parsed.scores || [];
       state.teacherComments = parsed.teacherComments || [];
       state.feedbacks = parsed.feedbacks || [];
@@ -517,6 +531,7 @@ function save() {
     pieces: state.pieces,
     tasks: state.tasks,
     practiceLogs: state.practiceLogs,
+    practiceStamps: state.practiceStamps,
     scores: state.scores,
     teacherComments: state.teacherComments,
     feedbacks: state.feedbacks,
@@ -1107,6 +1122,7 @@ function resetTask(id) {
 function completeHomeMission() {
   const id = els.homeMissionDoneButton.dataset.homeTaskId;
   if (!id) return;
+  addPracticeStamp();
   updateTask(id, 1);
 }
 
@@ -1727,6 +1743,7 @@ function startPersonalSetup() {
     state.pieces = [];
     state.tasks = [];
     state.practiceLogs = [];
+    state.practiceStamps = {};
     state.scores = [];
     state.teacherComments = [];
     state.feedbacks = [];
@@ -2126,6 +2143,7 @@ function getStorageReportItems() {
     ["曲", `${state.pieces.length}件`],
     ["練習指示", `${state.tasks.length}件`],
     ["練習記録", `${state.practiceLogs.length}件`],
+    ["シール", `${getPracticeStampCount()}枚`],
     ["採点", `${state.scores.length}件`],
     ["先生コメント", `${state.teacherComments.length}件`],
     ["録音", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
@@ -2165,6 +2183,7 @@ function exportData() {
     pieces: state.pieces,
     tasks: state.tasks,
     practiceLogs: state.practiceLogs,
+    practiceStamps: state.practiceStamps,
     scores: state.scores,
     teacherComments: state.teacherComments,
     feedbacks: state.feedbacks,
@@ -2196,6 +2215,7 @@ function importData(file) {
       state.pieces = Array.isArray(data.pieces) ? data.pieces : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
       state.practiceLogs = Array.isArray(data.practiceLogs) ? data.practiceLogs : [];
+      state.practiceStamps = data.practiceStamps || {};
       state.scores = Array.isArray(data.scores) ? data.scores : [];
       state.teacherComments = Array.isArray(data.teacherComments) ? data.teacherComments : [];
       state.feedbacks = Array.isArray(data.feedbacks) ? data.feedbacks : [];
@@ -2241,6 +2261,7 @@ async function clearAllData() {
   state.pieces = [];
   state.tasks = [];
   state.practiceLogs = [];
+  state.practiceStamps = {};
   state.scores = [];
   state.teacherComments = [];
   state.feedbacks = [];

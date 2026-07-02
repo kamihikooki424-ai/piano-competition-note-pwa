@@ -1,4 +1,4 @@
-const CACHE_NAME = "piano-note-zero-cost-v22";
+const CACHE_NAME = "piano-note-zero-cost-v23";
 const ASSETS = [
   "./",
   "./index.html",
