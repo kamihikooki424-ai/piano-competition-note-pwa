@@ -41,6 +41,7 @@ const els = {
   urgentCount: $("#urgentCount"),
   taskDoneCount: $("#taskDoneCount"),
   currentScoreLabel: $("#currentScoreLabel"),
+  homeStatusList: $("#homeStatusList"),
   todayPracticeLabel: $("#todayPracticeLabel"),
   setupCard: $("#setupCard"),
   setupTitle: $("#setupTitle"),
@@ -300,6 +301,7 @@ function renderHome() {
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。録音して聴き返しましょう。";
+  renderHomeStatus();
   renderSetupCard();
   renderHomeBackupNudge();
 
@@ -384,6 +386,53 @@ function toggleApplicationCheck(value) {
   });
   save();
   render();
+}
+
+function renderHomeStatus() {
+  const piece = state.pieces[0];
+  const latestPracticeLog = state.practiceLogs.at(-1);
+  const latestTeacherComment = state.teacherComments.at(-1);
+  const recording = state.recordings[0];
+  const items = [
+    {
+      label: "曲",
+      title: piece ? piece.title : "曲を登録",
+      detail: piece
+        ? `${piece.composer || "作曲者未設定"}${piece.tempo ? ` / ${piece.tempo}BPM` : ""}`
+        : "課題曲・自由曲を追加できます",
+      view: "practiceView"
+    },
+    {
+      label: "練習",
+      title: latestPracticeLog ? `${formatDate(latestPracticeLog.date)} ${latestPracticeLog.minutes}分` : "練習記録を保存",
+      detail: latestPracticeLog?.memo || latestPracticeLog?.doneSummary || "今日やったことを残せます",
+      view: "practiceView"
+    },
+    {
+      label: "先生",
+      title: latestTeacherComment ? formatDate(latestTeacherComment.date) : "先生コメントを保存",
+      detail: latestTeacherComment?.next || latestTeacherComment?.body || "返ってきた指導を残せます",
+      view: "growthView"
+    },
+    {
+      label: "録音",
+      title: recording ? recording.name : "録音する",
+      detail: recording ? `${recording.createdAt} / ${recording.duration}` : "弾いたらすぐ聴き返せます",
+      view: "recordView"
+    }
+  ];
+
+  els.homeStatusList.innerHTML = items.map((item) => `
+    <button class="home-status-item" data-view-shortcut="${item.view}">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(item.title)}</strong>
+      <small>${escapeHtml(item.detail)}</small>
+    </button>
+  `).join("");
+
+  els.homeStatusList.querySelectorAll("[data-view-shortcut]").forEach((button) => {
+    button.addEventListener("click", () => setView(button.dataset.viewShortcut));
+  });
 }
 
 function renderSetupCard() {

@@ -178,7 +178,7 @@ main { padding-top: 16px; }
   gap: 8px;
 }
 
-.summary-grid article, .tool-card, .competition-card, .task-card, .recording-card, .notice-card, .setup-card {
+.summary-grid article, .tool-card, .competition-card, .task-card, .recording-card, .notice-card, .setup-card, .home-status-card {
   border: 1px solid rgba(216, 227, 223, .9);
   border-radius: 14px;
   background: rgba(255, 255, 255, .88);
@@ -188,6 +188,48 @@ main { padding-top: 16px; }
 .summary-grid article { padding: 13px 10px; }
 .summary-grid strong { display: block; color: var(--green); font-size: 20px; }
 .summary-grid span, .subcopy { color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+.home-status-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.home-status-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.home-status-item {
+  display: grid;
+  min-height: 92px;
+  gap: 5px;
+  align-content: start;
+  border: 1px solid rgba(39, 102, 123, .16);
+  border-radius: 12px;
+  background: #fbfaf7;
+  padding: 10px;
+  text-align: left;
+}
+
+.home-status-item span {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.home-status-item strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.home-status-item small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
 
 .notice-card, .today-card, .backup-nudge-card {
   display: grid;
@@ -961,6 +1003,7 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
   .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
   .setup-checks, .setup-actions { grid-template-columns: 1fr; }
+  .home-status-list { grid-template-columns: 1fr; }
   .application-checks div { grid-template-columns: 1fr; }
   .piece-form { grid-template-columns: 1fr; }
   .quick-start-card { grid-template-columns: 1fr; }
