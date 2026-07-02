@@ -1411,6 +1411,17 @@ input:focus, textarea:focus, select:focus {
 .record-mode-toggle button:disabled {
   opacity: .72;
 }
+.record-note {
+  width: min(100%, 320px);
+  margin: 10px auto 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .16);
+  padding: 8px 10px;
+  color: rgba(255, 255, 255, .86);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.45;
+}
 .video-preview {
   width: min(100%, 280px);
   aspect-ratio: 3 / 4;
