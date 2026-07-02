@@ -30,6 +30,7 @@ const state = {
   scores: [],
   teacherComments: [],
   feedbacks: [],
+  trialChecks: {},
   isSampleData: false,
   editingScoreId: "",
   practiceTimerSeconds: 15 * 60,
@@ -95,6 +96,8 @@ const els = {
   teacherReviewOutput: $("#teacherReviewOutput"),
   teacherCommentList: $("#teacherCommentList"),
   trialInviteOutput: $("#trialInviteOutput"),
+  trialProgressLabel: $("#trialProgressLabel"),
+  trialChecklist: $("#trialChecklist"),
   feedbackList: $("#feedbackList"),
   storageReport: $("#storageReport"),
   onboardingDialog: $("#onboardingDialog"),
@@ -365,6 +368,7 @@ function load() {
       state.scores = parsed.scores || [];
       state.teacherComments = parsed.teacherComments || [];
       state.feedbacks = parsed.feedbacks || [];
+      state.trialChecks = parsed.trialChecks || {};
       state.isSampleData = Boolean(parsed.isSampleData);
       state.bpm = parsed.bpm || 84;
       state.practiceTimerSeconds = Number(parsed.practiceTimerSeconds || 15 * 60);
@@ -467,6 +471,7 @@ function save() {
     scores: state.scores,
     teacherComments: state.teacherComments,
     feedbacks: state.feedbacks,
+    trialChecks: state.trialChecks,
     isSampleData: state.isSampleData,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
@@ -1425,6 +1430,7 @@ function roleLabel(role) {
 }
 
 function buildTrialInvite() {
+  const trialItems = trialCheckDefinitions().map(([, title]) => `・${title}`);
   return [
     "【ピアノコンクールノート 試用URL】",
     "https://kamihikooki424-ai.github.io/piano-competition-note-pwa/",
@@ -1433,6 +1439,9 @@ function buildTrialInvite() {
     "1. スマホでURLを開く",
     "2. ホーム画面に追加する",
     "3. コンクール締切、先生の練習指示、録音、採点を試す",
+    "",
+    "■ 試してほしい操作",
+    ...trialItems,
     "",
     "■ 注意",
     "入力データと録音はこの端末内に保存されます。GitHubへ送信されません。",
@@ -1446,8 +1455,58 @@ function buildTrialInvite() {
   ].join("\n");
 }
 
+function trialCheckDefinitions() {
+  return [
+    ["install", "ホーム画面に追加", "スマホでURLを開き、アプリとして起動できるか"],
+    ["profile", "プロフィール登録", "子どもの名前・学年を登録できるか"],
+    ["competition", "コンクール登録", "申込締切・本番日・会場を登録できるか"],
+    ["practice", "練習指示と記録", "先生の練習方法と今日の練習内容を残せるか"],
+    ["recording", "録音と再生", "録音して聴き返せるか"],
+    ["score", "採点と成長確認", "採点して点数推移を見られるか"],
+    ["teacher", "先生共有", "先生チェック依頼文をコピーできるか"],
+    ["backup", "バックアップ", "設定からJSONを書き出せるか"]
+  ];
+}
+
+function getTrialProgress() {
+  const items = trialCheckDefinitions();
+  const done = items.filter(([key]) => state.trialChecks[key]).length;
+  return { done, total: items.length, items };
+}
+
+function renderTrialChecklist() {
+  const progress = getTrialProgress();
+  els.trialProgressLabel.textContent = `${progress.done}/${progress.total}項目確認済み`;
+  els.trialChecklist.innerHTML = progress.items.map(([key, title, detail]) => `
+    <button class="${state.trialChecks[key] ? "done" : ""}" data-trial-check="${key}" type="button">
+      <span>${state.trialChecks[key] ? "✓" : "○"}</span>
+      <strong>${escapeHtml(title)}</strong>
+      <small>${escapeHtml(detail)}</small>
+    </button>
+  `).join("");
+  els.trialChecklist.querySelectorAll("[data-trial-check]").forEach((button) => {
+    button.addEventListener("click", () => toggleTrialCheck(button.dataset.trialCheck));
+  });
+}
+
+function toggleTrialCheck(key) {
+  state.trialChecks[key] = !state.trialChecks[key];
+  save();
+  renderTrialTools();
+  renderStorageReport();
+}
+
+function formatTrialProgressForShare() {
+  const progress = getTrialProgress();
+  const remaining = progress.items
+    .filter(([key]) => !state.trialChecks[key])
+    .map(([, title]) => title);
+  return `試用チェック：${progress.done}/${progress.total}完了${remaining.length ? ` / 未確認：${remaining.join("、")}` : " / すべて確認済み"}`;
+}
+
 function renderTrialTools() {
   els.trialInviteOutput.value = buildTrialInvite();
+  renderTrialChecklist();
 
   if (state.feedbacks.length === 0) {
     els.feedbackList.innerHTML = `<div class="notice-card"><strong>フィードバックはまだありません</strong><span>試用してもらった感想をここに記録できます。</span></div>`;
@@ -1499,13 +1558,14 @@ function deleteFeedback(id) {
 
 function buildFeedbackSummary() {
   if (state.feedbacks.length === 0) {
-    return "試用フィードバックはまだありません。";
+    return `試用フィードバックはまだありません。\n${formatTrialProgressForShare()}`;
   }
   const average = state.feedbacks.reduce((sum, feedback) => sum + Number(feedback.rating || 0), 0) / state.feedbacks.length;
   const lines = [
     "【ピアノコンクールノート 試用フィードバック】",
     `件数：${state.feedbacks.length}`,
     `平均評価：${average.toFixed(1)} / 5`,
+    formatTrialProgressForShare(),
     ""
   ];
   [...state.feedbacks].reverse().forEach((feedback, index) => {
@@ -1565,6 +1625,7 @@ function startPersonalSetup() {
     state.scores = [];
     state.teacherComments = [];
     state.feedbacks = [];
+    state.trialChecks = {};
     state.isSampleData = false;
     save();
     render();
@@ -1965,6 +2026,7 @@ function getStorageReportItems() {
     ["録音", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
     ["録音保存確認", unsavedCount ? `未保存 ${unsavedCount}件` : "すべて確認済み"],
     ["試用メモ", `${state.feedbacks.length}件`],
+    ["試用チェック", `${getTrialProgress().done}/${getTrialProgress().total}完了`],
     ["バックアップ", getBackupStatusLabel()]
   ];
 }
@@ -2001,6 +2063,7 @@ function exportData() {
     scores: state.scores,
     teacherComments: state.teacherComments,
     feedbacks: state.feedbacks,
+    trialChecks: state.trialChecks,
     isSampleData: state.isSampleData,
     bpm: state.bpm,
     practiceTimerSeconds: state.practiceTimerSeconds
@@ -2031,6 +2094,7 @@ function importData(file) {
       state.scores = Array.isArray(data.scores) ? data.scores : [];
       state.teacherComments = Array.isArray(data.teacherComments) ? data.teacherComments : [];
       state.feedbacks = Array.isArray(data.feedbacks) ? data.feedbacks : [];
+      state.trialChecks = data.trialChecks || {};
       state.isSampleData = Boolean(data.isSampleData);
       state.bpm = Number(data.bpm || 84);
       state.practiceTimerSeconds = Number(data.practiceTimerSeconds || state.practiceTimerSeconds);
@@ -2075,6 +2139,7 @@ async function clearAllData() {
   state.scores = [];
   state.teacherComments = [];
   state.feedbacks = [];
+  state.trialChecks = {};
   state.isSampleData = false;
   state.bpm = 84;
   state.practiceTimerSeconds = 15 * 60;
