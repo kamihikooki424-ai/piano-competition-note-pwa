@@ -329,13 +329,13 @@ main { padding-top: 16px; }
 .stamp-days {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 7px;
+  gap: 8px;
 }
 .stamp-days span {
   position: relative;
   display: grid;
   min-width: 0;
-  min-height: 70px;
+  min-height: 82px;
   place-items: center;
   border: 1px solid rgba(216, 227, 223, .9);
   border-radius: 18px;
@@ -380,7 +380,7 @@ main { padding-top: 16px; }
 }
 .stamp-days span strong {
   color: inherit;
-  font-size: 30px;
+  font-size: 36px;
   line-height: 1;
 }
 
@@ -398,16 +398,24 @@ main { padding-top: 16px; }
 
 .home-mission-card {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   border: 1px solid rgba(39, 102, 123, .2);
-  border-radius: 14px;
+  border-radius: 18px;
   background: #ffffff;
-  padding: 14px;
+  padding: 18px;
   box-shadow: 0 12px 30px rgba(18, 33, 31, .08);
 }
-.home-mission-card strong { display: block; color: var(--green); font-size: 16px; }
+.home-mission-card strong { display: block; color: var(--green); font-size: 18px; }
 .home-mission-card span,
-.home-mission-card p { color: #5b432b; font-size: 13px; line-height: 1.5; }
+.home-mission-card p { color: #5b432b; font-size: 14px; line-height: 1.5; }
+.home-mission-card > div:first-child span {
+  display: block;
+  margin-top: 3px;
+  color: #1f2d2a;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.25;
+}
 .mission-progress {
   height: 10px;
   overflow: hidden;
@@ -423,10 +431,11 @@ main { padding-top: 16px; }
 }
 .mission-actions {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   align-items: center;
   gap: 8px;
 }
+.mission-actions .text-button { display: none; }
 .mission-done-button {
   min-height: 56px;
   border-radius: 16px;
@@ -609,6 +618,10 @@ main { padding-top: 16px; }
   border-radius: 999px;
   background: var(--green);
   color: #fff;
+}
+
+.kid-optional-card {
+  display: none;
 }
 
 .parent-menu {
