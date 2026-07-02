@@ -257,6 +257,31 @@ main { padding-top: 16px; }
 .notice-card strong, .today-card strong, .backup-nudge-card strong { color: var(--green); }
 .notice-card span, .today-card span, .backup-nudge-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
 
+.practice-sticker-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(184, 121, 47, .28);
+  border-radius: 14px;
+  background: #fff7e8;
+  padding: 14px;
+  box-shadow: 0 12px 30px rgba(18, 33, 31, .08);
+}
+.sticker-mark {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--gold);
+  font-size: 24px;
+  font-weight: 900;
+}
+.practice-sticker-card strong { display: block; color: var(--green); }
+.practice-sticker-card span { color: #5b432b; font-size: 13px; line-height: 1.5; }
+
 .week-practice-card {
   display: grid;
   gap: 12px;
@@ -1144,6 +1169,20 @@ dialog::backdrop { background: rgba(10, 18, 17, .48); }
 .dialog-panel { display: grid; gap: 12px; max-height: calc(100vh - 40px); overflow: auto; border-radius: 18px; background: white; padding: 18px; box-shadow: var(--shadow); }
 .dialog-heading button { background: transparent; color: var(--muted); font-weight: 900; }
 label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 900; }
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(39, 102, 123, .14);
+  border-radius: 12px;
+  background: #fbfaf7;
+  padding: 10px 12px;
+}
+.inline-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .reminder-mark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: #fff1d8; color: var(--gold); font-size: 24px; font-weight: 900; }
 .reminder-body { display: grid; gap: 8px; color: #2f403d; font-size: 14px; line-height: 1.5; }
@@ -1162,6 +1201,8 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   }
   .today-card, .backup-nudge-card { grid-template-columns: 1fr; }
   .today-card .text-button, .backup-nudge-card .text-button { grid-column: 1; grid-row: auto; }
+  .practice-sticker-card { grid-template-columns: auto 1fr; }
+  .practice-sticker-card .text-button { grid-column: 1 / -1; }
   .readiness-head { grid-template-columns: 1fr; }
   .readiness-score { width: 68px; height: 68px; }
   .setup-checks, .setup-actions { grid-template-columns: 1fr; }

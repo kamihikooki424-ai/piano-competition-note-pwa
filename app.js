@@ -53,6 +53,9 @@ const els = {
   readinessScoreLabel: $("#readinessScoreLabel"),
   homeStatusList: $("#homeStatusList"),
   todayPracticeLabel: $("#todayPracticeLabel"),
+  practiceStickerMark: $("#practiceStickerMark"),
+  practiceStickerTitle: $("#practiceStickerTitle"),
+  practiceStickerText: $("#practiceStickerText"),
   weeklyPracticeDetail: $("#weeklyPracticeDetail"),
   weeklyPracticeDays: $("#weeklyPracticeDays"),
   readinessDetail: $("#readinessDetail"),
@@ -220,6 +223,16 @@ function renderPracticeStats() {
       </span>
     `;
   }).join("");
+}
+
+function renderPracticeSticker() {
+  const stats = getPracticeStats();
+  const practicedToday = Boolean(stats.last7Days.at(-1)?.practiced);
+  els.practiceStickerMark.textContent = practicedToday ? "★" : "○";
+  els.practiceStickerTitle.textContent = practicedToday ? "今日のシール獲得" : "今日のシール";
+  els.practiceStickerText.textContent = practicedToday
+    ? `よくできました。連続${stats.streak}日です。`
+    : "練習記録をつけると、今日のシールがつきます。";
 }
 
 function formatPracticeStatsForMemo() {
@@ -515,6 +528,7 @@ function renderHome() {
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。録音して聴き返しましょう。";
   renderPracticeStats();
+  renderPracticeSticker();
   renderReadinessStatus();
   renderHomeStatus();
   renderSetupCard();
@@ -965,10 +979,18 @@ function createTaskFromTeacherComment(id) {
     setView("practiceView");
     return;
   }
+  state.isSampleData = false;
+  const taskId = addTaskFromTeacherComment(comment);
+  state.teacherComments = state.teacherComments.map((item) => item.id === id ? { ...item, taskId } : item);
+  save();
+  render();
+  setView("practiceView");
+}
+
+function addTaskFromTeacherComment(comment) {
   const sourceText = (comment.next || comment.body || "先生からの課題").trim();
   const taskId = createId();
   const title = sourceText.length > 26 ? `${sourceText.slice(0, 26)}...` : sourceText;
-  state.isSampleData = false;
   state.tasks.unshift({
     id: taskId,
     title,
@@ -977,10 +999,7 @@ function createTaskFromTeacherComment(id) {
     count: 0,
     source: "teacherComment"
   });
-  state.teacherComments = state.teacherComments.map((item) => item.id === id ? { ...item, taskId } : item);
-  save();
-  render();
-  setView("practiceView");
+  return taskId;
 }
 
 function formatShortDate(value) {
@@ -1291,14 +1310,19 @@ function saveTeacherComment() {
   const next = $("#teacherCommentNextInput").value.trim();
   if (!body && !next) return;
   state.isSampleData = false;
-  state.teacherComments.push({
+  const comment = {
     id: createId(),
     date: todayKey(),
     body,
     next
-  });
+  };
+  if (next && $("#teacherCommentTaskInput")?.checked) {
+    comment.taskId = addTaskFromTeacherComment(comment);
+  }
+  state.teacherComments.push(comment);
   $("#teacherCommentInput").value = "";
   $("#teacherCommentNextInput").value = "";
+  $("#teacherCommentTaskInput").checked = true;
   save();
   render();
 }

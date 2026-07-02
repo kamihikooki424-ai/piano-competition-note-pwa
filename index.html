@@ -80,6 +80,15 @@
           <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
         </section>
 
+        <section class="practice-sticker-card">
+          <div class="sticker-mark" id="practiceStickerMark">★</div>
+          <div>
+            <strong id="practiceStickerTitle">今日のシール</strong>
+            <span id="practiceStickerText">練習記録をつけるとシールがつきます。</span>
+          </div>
+          <button class="text-button" data-view-shortcut="practiceView">記録する</button>
+        </section>
+
         <section class="week-practice-card">
           <div>
             <strong>今週の積み上げ</strong>
@@ -320,6 +329,7 @@
           <div class="teacher-comment-form">
             <label>先生コメント<textarea id="teacherCommentInput" rows="3" placeholder="例：音の粒は良くなっています。左手をもう少し軽くしましょう。"></textarea></label>
             <label>次回までの課題<textarea id="teacherCommentNextInput" rows="2" placeholder="例：右手だけゆっくり5回、最後の4小節を録音"></textarea></label>
+            <label class="inline-check"><input id="teacherCommentTaskInput" type="checkbox" checked> 次回課題を練習カウンターにも追加</label>
             <button class="primary-button" id="saveTeacherCommentButton" type="button">先生コメントを保存</button>
           </div>
           <div id="teacherCommentList" class="teacher-comment-list"></div>
