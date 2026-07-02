@@ -71,6 +71,14 @@ const els = {
   readinessHeroScore: $("#readinessHeroScore"),
   readinessBar: $("#readinessBar"),
   nextActionList: $("#nextActionList"),
+  kidPracticeTitle: $("#kidPracticeTitle"),
+  kidPracticeDetail: $("#kidPracticeDetail"),
+  kidPracticeCount: $("#kidPracticeCount"),
+  kidPracticeBar: $("#kidPracticeBar"),
+  kidPracticeDoneButton: $("#kidPracticeDoneButton"),
+  kidPracticeTimerButton: $("#kidPracticeTimerButton"),
+  kidPracticeTimerLabel: $("#kidPracticeTimerLabel"),
+  kidPracticeRecordButton: $("#kidPracticeRecordButton"),
   setupCard: $("#setupCard"),
   setupTitle: $("#setupTitle"),
   setupSummary: $("#setupSummary"),
@@ -815,6 +823,8 @@ function renderPractice() {
   els.bpmLabel.textContent = state.bpm;
   els.tempoSlider.value = String(state.bpm);
   els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+  els.kidPracticeTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+  renderKidPracticeCard();
   renderPieces();
   renderPracticeLogs();
   if (state.tasks.length === 0) {
@@ -848,6 +858,31 @@ function renderPractice() {
   $$("[data-task-plus]").forEach((button) => button.addEventListener("click", () => updateTask(button.dataset.taskPlus, 1)));
   $$("[data-task-reset]").forEach((button) => button.addEventListener("click", () => resetTask(button.dataset.taskReset)));
   $$("[data-edit-task]").forEach((button) => button.addEventListener("click", () => openTaskDialog(button.dataset.editTask)));
+}
+
+function renderKidPracticeCard() {
+  const task = getNextOpenTask();
+  if (!task) {
+    els.kidPracticeTitle.textContent = state.tasks.length ? "今日の課題は完了" : "今日やることを登録しよう";
+    els.kidPracticeDetail.textContent = state.tasks.length
+      ? "よくできました。録音して聴き返すか、練習記録を残しましょう。"
+      : "先生の練習指示を追加すると、ここに大きく表示されます。";
+    els.kidPracticeCount.textContent = state.tasks.length ? "完了" : "0/1";
+    els.kidPracticeBar.style.width = state.tasks.length ? "100%" : "0%";
+    els.kidPracticeDoneButton.disabled = true;
+    delete els.kidPracticeDoneButton.dataset.kidTaskId;
+    return;
+  }
+
+  const target = Math.max(1, Number(task.target || 1));
+  const count = Math.min(target, Number(task.count || 0));
+  const percent = Math.min(100, Math.round((count / target) * 100));
+  els.kidPracticeTitle.textContent = task.title || "練習する";
+  els.kidPracticeDetail.textContent = task.detail || "ゆっくり、ていねいに弾きましょう。";
+  els.kidPracticeCount.textContent = `${count}/${target}`;
+  els.kidPracticeBar.style.width = `${percent}%`;
+  els.kidPracticeDoneButton.disabled = false;
+  els.kidPracticeDoneButton.dataset.kidTaskId = task.id;
 }
 
 function renderPieces() {
@@ -1130,6 +1165,7 @@ function deleteCompetition() {
 }
 
 function updateTask(id, delta) {
+  if (delta > 0) addPracticeStamp();
   state.tasks = state.tasks.map((task) => task.id === id ? { ...task, count: Math.max(0, task.count + delta) } : task);
   save();
   render();
@@ -1144,8 +1180,18 @@ function resetTask(id) {
 function completeHomeMission() {
   const id = els.homeMissionDoneButton.dataset.homeTaskId;
   if (!id) return;
-  addPracticeStamp();
   updateTask(id, 1);
+}
+
+function completeKidPracticeTask() {
+  const id = els.kidPracticeDoneButton.dataset.kidTaskId;
+  if (!id) return;
+  updateTask(id, 1);
+}
+
+function startKidPracticeTimer() {
+  setPracticeTimer(10);
+  togglePracticeTimer();
 }
 
 function getTaskDoneSummary() {
@@ -1273,9 +1319,11 @@ function togglePracticeTimer() {
   state.practiceTimerId = setInterval(() => {
     state.practiceTimerRemaining = Math.max(0, state.practiceTimerRemaining - 1);
     els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+    els.kidPracticeTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
     if (state.practiceTimerRemaining === 0) {
       stopPracticeTimer();
       els.practiceTimerLabel.textContent = "できた！";
+      els.kidPracticeTimerLabel.textContent = "できた";
     }
   }, 1000);
 }
@@ -2313,6 +2361,9 @@ function bind() {
   });
   els.timerStartButton.addEventListener("click", togglePracticeTimer);
   els.timerResetButton.addEventListener("click", resetPracticeTimer);
+  els.kidPracticeDoneButton.addEventListener("click", completeKidPracticeTask);
+  els.kidPracticeTimerButton.addEventListener("click", startKidPracticeTimer);
+  els.kidPracticeRecordButton.addEventListener("click", () => setView("recordView"));
   $("#addPieceButton").addEventListener("click", addPiece);
   $("#addTaskButton").addEventListener("click", addTask);
   $("#savePracticeLogButton").addEventListener("click", savePracticeLog);
