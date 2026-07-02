@@ -194,7 +194,7 @@
               <span id="kidPracticeTimerLabel">10:00</span>
               タイマー
             </button>
-            <button class="kid-sub-button" id="kidPracticeRecordButton" type="button">ろくおん</button>
+            <button class="kid-sub-button" id="kidPracticeRecordButton" type="button">きろく</button>
           </div>
         </section>
 
@@ -287,9 +287,14 @@
 
       <section class="view" id="recordView">
         <section class="record-panel">
-          <p class="eyebrow">ろくおん</p>
-          <h2>ひいて、きく</h2>
+          <p class="eyebrow">きろく</p>
+          <h2>ひいて、みる</h2>
           <p id="recordMessage">まんなかのボタンをおします。</p>
+          <div class="record-mode-toggle" role="group" aria-label="記録モード">
+            <button id="audioModeButton" class="active" type="button">音だけ</button>
+            <button id="videoModeButton" type="button">動画</button>
+          </div>
+          <video id="videoPreview" class="video-preview" muted playsinline hidden></video>
           <button id="recordButton" class="record-button" aria-label="録音を開始">
             <span></span>
             <strong>ろくおん</strong>
@@ -297,8 +302,8 @@
           <div id="recordTimer" class="record-timer">0:00</div>
         </section>
         <section class="tool-card">
-          <h3>録音一覧</h3>
-          <p class="subcopy">録音はこの端末内に保存されます。重要な録音は端末にも保存してください。</p>
+          <h3>録音・動画一覧</h3>
+          <p class="subcopy">録音と動画はこの端末内に保存されます。重要なものは端末にも保存してください。</p>
           <div id="recordingList" class="recording-list"></div>
         </section>
       </section>
@@ -553,7 +558,7 @@
     <nav class="bottom-nav">
       <button class="active" data-view="homeView">ホーム</button>
       <button data-view="practiceView">れんしゅう</button>
-      <button data-view="recordView">ろくおん</button>
+      <button data-view="recordView">きろく</button>
       <button data-view="growthView">せいちょう</button>
       <button data-view="settingsView">おとな</button>
     </nav>

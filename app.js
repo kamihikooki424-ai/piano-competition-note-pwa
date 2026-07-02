@@ -28,6 +28,8 @@ const state = {
   recordingStartedAt: 0,
   recordingSeconds: 0,
   recordingTimer: null,
+  recordingMode: "audio",
+  mediaStream: null,
   recordings: [],
   scores: [],
   teacherComments: [],
@@ -110,6 +112,9 @@ const els = {
   recordButton: $("#recordButton"),
   recordMessage: $("#recordMessage"),
   recordTimer: $("#recordTimer"),
+  audioModeButton: $("#audioModeButton"),
+  videoModeButton: $("#videoModeButton"),
+  videoPreview: $("#videoPreview"),
   recordingList: $("#recordingList"),
   latestScoreHero: $("#latestScoreHero"),
   scoreFormTitle: $("#scoreFormTitle"),
@@ -399,7 +404,7 @@ function getReadinessStatus() {
     actions.push({ label: "練習記録", detail: "今日の練習時間と内容を残す", view: "practiceView" });
   }
   if (state.recordings.length === 0) {
-    actions.push({ label: "録音する", detail: "一度弾いて聴き返せる状態にする", view: "recordView" });
+    actions.push({ label: "記録する", detail: "音か動画で残して見返せる状態にする", view: "recordView" });
   }
   if (!latestScore) {
     actions.push({ label: "採点する", detail: "今の完成度を100点で残す", view: "growthView" });
@@ -484,6 +489,7 @@ function load() {
       state.trialChecks = parsed.trialChecks || {};
       state.isSampleData = Boolean(parsed.isSampleData);
       state.bpm = parsed.bpm || 84;
+      state.recordingMode = parsed.recordingMode === "video" ? "video" : "audio";
       state.practiceTimerSeconds = Number(parsed.practiceTimerSeconds || 15 * 60);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
     } catch {
@@ -588,6 +594,7 @@ function save() {
     trialChecks: state.trialChecks,
     isSampleData: state.isSampleData,
     bpm: state.bpm,
+    recordingMode: state.recordingMode,
     practiceTimerSeconds: state.practiceTimerSeconds
   }));
 }
@@ -595,6 +602,7 @@ function save() {
 function render() {
   renderHome();
   renderPractice();
+  renderRecordingMode();
   renderRecordings();
   renderGrowth();
   renderTrialTools();
@@ -627,7 +635,7 @@ function renderHome() {
   const nextTask = state.tasks.find((task) => task.count < task.target);
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
-    : "今日の練習指示は完了です。録音して聴き返しましょう。";
+    : "今日の練習指示は完了です。音か動画で見返しましょう。";
   renderHomeMission();
   renderPracticeStats();
   renderPracticeSticker();
@@ -753,9 +761,9 @@ function renderHomeStatus() {
       view: "growthView"
     },
     {
-      label: "録音",
-      title: recording ? recording.name : "録音する",
-      detail: recording ? `${recording.createdAt} / ${recording.duration}` : "弾いたらすぐ聴き返せます",
+      label: "きろく",
+      title: recording ? recording.name : "音か動画で記録する",
+      detail: recording ? `${getRecordingKindLabel(recording)} / ${recording.createdAt} / ${recording.duration}` : "弾いたらすぐ見返せます",
       view: "recordView"
     }
   ];
@@ -823,7 +831,7 @@ function renderSetupCard() {
     ["曲", state.pieces.length > 0],
     ["練習指示", state.tasks.length > 0],
     ["練習記録", state.practiceLogs.length > 0],
-    ["録音", state.recordings.length > 0],
+    ["録音・動画", state.recordings.length > 0],
     ["採点", state.scores.length > 0]
   ];
   const readyCount = checks.filter(([, ready]) => ready).length;
@@ -949,9 +957,34 @@ function renderPracticeLogs() {
   });
 }
 
+function getRecordingKind(recording) {
+  const mimeType = recording.mimeType || recording.blob?.type || "";
+  return recording.kind === "video" || mimeType.startsWith("video/") ? "video" : "audio";
+}
+
+function getRecordingKindLabel(recording) {
+  return getRecordingKind(recording) === "video" ? "動画" : "録音";
+}
+
+function getRecordingExtension(recording) {
+  const mimeType = recording.mimeType || recording.blob?.type || "";
+  if (mimeType.includes("mp4")) return "mp4";
+  if (mimeType.includes("wav")) return "wav";
+  if (mimeType.includes("mpeg")) return "mp3";
+  return "webm";
+}
+
+function renderRecordingPlayer(recording) {
+  const src = escapeHtml(recording.url);
+  if (getRecordingKind(recording) === "video") {
+    return `<video class="recording-video" controls playsinline src="${src}"></video>`;
+  }
+  return `<audio controls src="${src}"></audio>`;
+}
+
 function renderRecordings() {
   if (state.recordings.length === 0) {
-    els.recordingList.innerHTML = `<div class="notice-card"><strong>録音はまだありません</strong><span>中央の録音ボタンから始めます。録音はこの端末内に保存されます。</span></div>`;
+    els.recordingList.innerHTML = `<div class="notice-card"><strong>録音・動画はまだありません</strong><span>中央のボタンから始めます。録音と動画はこの端末内に保存されます。</span></div>`;
     return;
   }
   els.recordingList.innerHTML = state.recordings.map((recording) => `
@@ -959,7 +992,7 @@ function renderRecordings() {
       <div class="recording-head">
         <div>
           <h3>${escapeHtml(recording.name)}</h3>
-          <p class="subcopy">${escapeHtml(recording.createdAt)} / ${escapeHtml(recording.duration)}</p>
+          <p class="subcopy">${escapeHtml(getRecordingKindLabel(recording))} / ${escapeHtml(recording.createdAt)} / ${escapeHtml(recording.duration)}</p>
         </div>
         <div class="recording-actions">
           <button class="mini-action-button" data-favorite-recording="${recording.id}">${recording.favorite ? "大切" : "通常"}</button>
@@ -968,9 +1001,9 @@ function renderRecordings() {
           <button class="mini-danger-button" data-delete-recording="${recording.id}">削除</button>
         </div>
       </div>
-      <audio controls src="${recording.url}"></audio>
+      ${renderRecordingPlayer(recording)}
       <textarea class="recording-memo" data-recording-memo="${recording.id}" rows="2" placeholder="先生に聞いてほしい所、弾き直したい所など">${escapeHtml(recording.memo || "")}</textarea>
-      <a class="download-link" href="${recording.url}" download="${escapeHtml(recording.name)}.webm" data-save-recording="${recording.id}">端末に保存</a>
+      <a class="download-link" href="${recording.url}" download="${escapeHtml(recording.name)}.${getRecordingExtension(recording)}" data-save-recording="${recording.id}">端末に保存</a>
     </article>
   `).join("");
 
@@ -1585,12 +1618,12 @@ function buildTeacherMemo() {
       ? recentPracticeLogs.map((log) => `・${formatDate(log.date)}：${log.minutes}分 / ${log.doneSummary || "進み具合未記録"} / ${log.memo || "メモなし"}`)
       : ["練習記録未登録"]),
     "",
-    "■ 録音メモ",
+    "■ 録音・動画メモ",
     ...(recentRecordings.length
-      ? recentRecordings.map((recording) => `・${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`)
-      : ["録音未登録"]),
+      ? recentRecordings.map((recording) => `・${recording.name}（${getRecordingKindLabel(recording)} / ${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`)
+      : ["録音・動画未登録"]),
     "",
-    "※録音ファイル本体はこの端末内保存です。必要な録音はアプリ内の「端末に保存」から別途共有してください。"
+    "※録音・動画ファイル本体はこの端末内保存です。必要なものはアプリ内の「端末に保存」から別途共有してください。"
   ];
 
   return lines.filter((line) => line !== "").join("\n");
@@ -1628,16 +1661,16 @@ function buildTeacherReviewRequest() {
   const practiceStatsLine = formatPracticeStatsForMemo();
   const readinessLine = formatReadinessForMemo();
   const recordingLine = recording
-    ? `${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
-    : "録音は別途送ります";
+    ? `${recording.name}（${getRecordingKindLabel(recording)} / ${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
+    : "録音・動画は別途送ります";
 
   return [
-    "先生、録音チェックをお願いします。",
+    "先生、録音・動画チェックをお願いします。",
     "",
     `生徒：${childProfileLine}`,
     `コンクール：${competitionLine}`,
     `曲：${pieceLine}`,
-    `確認してほしい録音：${recordingLine}`,
+    `確認してほしい録音・動画：${recordingLine}`,
     `最近の採点：${scoreLine}`,
     `前回の先生コメント：${teacherCommentLine}`,
     `直近の練習：${practiceLine}`,
@@ -1968,26 +2001,79 @@ function changeTempo(nextBpm) {
   }
 }
 
+function setRecordingMode(mode) {
+  if (state.recorder) return;
+  state.recordingMode = mode === "video" ? "video" : "audio";
+  save();
+  renderRecordingMode();
+}
+
+function renderRecordingMode() {
+  const isVideo = state.recordingMode === "video";
+  els.audioModeButton.classList.toggle("active", !isVideo);
+  els.videoModeButton.classList.toggle("active", isVideo);
+  els.audioModeButton.disabled = Boolean(state.recorder);
+  els.videoModeButton.disabled = Boolean(state.recorder);
+  els.recordButton.setAttribute("aria-label", isVideo ? "動画を開始" : "録音を開始");
+  if (!state.recorder) {
+    els.recordButton.querySelector("strong").textContent = isVideo ? "どうが" : "ろくおん";
+    els.recordMessage.textContent = isVideo ? "動画で、手の形も見られます。" : "音だけを、すぐ録れます。";
+    els.videoPreview.hidden = true;
+    els.videoPreview.srcObject = null;
+  }
+}
+
+function getSupportedMediaMimeType(kind) {
+  if (!window.MediaRecorder?.isTypeSupported) return "";
+  const candidates = kind === "video"
+    ? ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4"]
+    : ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/mpeg"];
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function stopActiveMediaStream() {
+  if (state.mediaStream) {
+    state.mediaStream.getTracks().forEach((track) => track.stop());
+    state.mediaStream = null;
+  }
+  els.videoPreview.pause();
+  els.videoPreview.srcObject = null;
+  els.videoPreview.hidden = true;
+}
+
 async function toggleRecording() {
   if (state.recorder) {
     state.recorder.stop();
     state.recorder = null;
     return;
   }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    els.recordMessage.textContent = "このブラウザでは録音に対応していません。";
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    els.recordMessage.textContent = "このブラウザでは録音・動画に対応していません。";
     return;
   }
+  const kind = state.recordingMode === "video" ? "video" : "audio";
+  const isVideo = kind === "video";
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
+    const stream = await navigator.mediaDevices.getUserMedia(isVideo
+      ? { audio: true, video: { facingMode: "user" } }
+      : { audio: true });
+    state.mediaStream = stream;
+    if (isVideo) {
+      els.videoPreview.srcObject = stream;
+      els.videoPreview.hidden = false;
+      await els.videoPreview.play().catch(() => {});
+    }
+    const mimeType = getSupportedMediaMimeType(kind);
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     state.recorder = recorder;
     state.recordingChunks = [];
     state.recordingStartedAt = Date.now();
     state.recordingSeconds = 0;
-    els.recordMessage.textContent = "録音中です。もう一度押すと停止します。";
+    els.recordMessage.textContent = isVideo ? "動画を撮っています。もう一度押すと停止します。" : "録音中です。もう一度押すと停止します。";
     els.recordButton.classList.add("recording");
     els.recordButton.querySelector("strong").textContent = "停止";
+    els.audioModeButton.disabled = true;
+    els.videoModeButton.disabled = true;
     state.recordingTimer = setInterval(() => {
       state.recordingSeconds += 1;
       els.recordTimer.textContent = formatDuration(state.recordingSeconds);
@@ -1999,11 +2085,13 @@ async function toggleRecording() {
     recorder.onstop = async () => {
       clearInterval(state.recordingTimer);
       const seconds = Math.max(1, Math.round((Date.now() - state.recordingStartedAt) / 1000));
-      const blob = new Blob(state.recordingChunks, { type: recorder.mimeType || "audio/webm" });
+      const blob = new Blob(state.recordingChunks, { type: recorder.mimeType || (isVideo ? "video/webm" : "audio/webm") });
       const recording = {
         id: createId(),
         blob,
-        name: `練習録音 ${state.recordings.length + 1}`,
+        kind,
+        mimeType: blob.type,
+        name: `${isVideo ? "練習動画" : "練習録音"} ${state.recordings.length + 1}`,
         createdAt: new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date()),
         createdAtMs: Date.now(),
         duration: formatDuration(seconds),
@@ -2017,6 +2105,8 @@ async function toggleRecording() {
         id: recording.id,
         url,
         blob,
+        kind: recording.kind,
+        mimeType: recording.mimeType,
         name: recording.name,
         createdAt: recording.createdAt,
         createdAtMs: recording.createdAtMs,
@@ -2025,17 +2115,21 @@ async function toggleRecording() {
         favorite: recording.favorite,
         saved: recording.saved
       });
-      stream.getTracks().forEach((track) => track.stop());
-      els.recordMessage.textContent = "録音できました。この端末内に保存しました。";
+      state.recorder = null;
+      stopActiveMediaStream();
       els.recordButton.classList.remove("recording");
-      els.recordButton.querySelector("strong").textContent = "録音";
       els.recordTimer.textContent = "0:00";
+      renderRecordingMode();
+      els.recordMessage.textContent = isVideo ? "動画を保存しました。この端末内に保存しました。" : "録音できました。この端末内に保存しました。";
       renderRecordings();
       renderStorageReport();
     };
     recorder.start();
   } catch {
-    els.recordMessage.textContent = "マイクの許可が必要です。ブラウザの許可を確認してください。";
+    stopActiveMediaStream();
+    els.recordMessage.textContent = isVideo
+      ? "カメラとマイクの許可が必要です。ブラウザの許可を確認してください。"
+      : "マイクの許可が必要です。ブラウザの許可を確認してください。";
   }
 }
 
@@ -2088,6 +2182,8 @@ async function loadRecordingsFromDb() {
       .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
       .map((recording) => ({
         id: recording.id,
+        kind: recording.kind || getRecordingKind(recording),
+        mimeType: recording.mimeType || recording.blob?.type || "",
         name: recording.name,
         createdAt: recording.createdAt,
         createdAtMs: recording.createdAtMs || 0,
@@ -2122,6 +2218,8 @@ async function updateRecordingInDb(id, updates) {
       const stored = {
         id: target.id,
         blob: target.blob,
+        kind: target.kind || getRecordingKind(target),
+        mimeType: target.mimeType || target.blob?.type || "",
         name: target.name,
         createdAt: target.createdAt,
         createdAtMs: target.createdAtMs,
@@ -2165,7 +2263,7 @@ function updateRecordingMemo(id, memo) {
 function renameRecording(id) {
   const target = state.recordings.find((recording) => recording.id === id);
   if (!target) return;
-  const nextName = prompt("録音名を入力してください", target.name);
+  const nextName = prompt("録音・動画名を入力してください", target.name);
   if (nextName === null) return;
   const trimmed = nextName.trim();
   if (!trimmed) return;
@@ -2173,7 +2271,7 @@ function renameRecording(id) {
 }
 
 async function deleteRecording(id) {
-  if (!confirm("この録音を削除しますか？")) return;
+  if (!confirm("この録音・動画を削除しますか？")) return;
   const target = state.recordings.find((recording) => recording.id === id);
   if (target) URL.revokeObjectURL(target.url);
   state.recordings = state.recordings.filter((recording) => recording.id !== id);
@@ -2189,7 +2287,7 @@ async function deleteRecording(id) {
     });
     db.close();
   } catch {
-    els.recordMessage.textContent = "録音一覧からは削除しましたが、端末内保存の削除確認に失敗しました。";
+    els.recordMessage.textContent = "録音・動画一覧からは削除しましたが、端末内保存の削除確認に失敗しました。";
   }
 }
 
@@ -2306,8 +2404,8 @@ function getStorageReportItems() {
     ["シール", `${getPracticeStampCount()}枚`],
     ["採点", `${state.scores.length}件`],
     ["先生コメント", `${state.teacherComments.length}件`],
-    ["録音", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
-    ["録音保存確認", unsavedCount ? `未保存 ${unsavedCount}件` : "すべて確認済み"],
+    ["録音・動画", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
+    ["端末保存確認", unsavedCount ? `未保存 ${unsavedCount}件` : "すべて確認済み"],
     ["試用メモ", `${state.feedbacks.length}件`],
     ["試用チェック", `${getTrialProgress().done}/${getTrialProgress().total}完了`],
     ["バックアップ", getBackupStatusLabel()]
@@ -2327,8 +2425,8 @@ function buildStorageReport() {
     "",
     ...getStorageReportItems().map(([label, value]) => `${label}：${value}`),
     "",
-    "入力データと録音はこの端末内に保存されています。GitHubへは送信されません。",
-    "録音ファイル本体はJSONバックアップに含まれないため、必要な録音は個別に端末へ保存してください。"
+    "入力データと録音・動画はこの端末内に保存されています。GitHubへは送信されません。",
+    "録音・動画ファイル本体はJSONバックアップに含まれないため、必要なものは個別に端末へ保存してください。"
   ].join("\n");
 }
 
@@ -2382,6 +2480,7 @@ function importData(file) {
       state.trialChecks = data.trialChecks || {};
       state.isSampleData = Boolean(data.isSampleData);
       state.bpm = Number(data.bpm || 84);
+      state.recordingMode = data.recordingMode === "video" ? "video" : "audio";
       state.practiceTimerSeconds = Number(data.practiceTimerSeconds || state.practiceTimerSeconds);
       state.practiceTimerRemaining = state.practiceTimerSeconds;
       save();
@@ -2395,11 +2494,12 @@ function importData(file) {
 }
 
 async function clearAllData() {
-  if (!confirm("この端末内のコンクール、練習、録音をすべて削除しますか？")) return;
+  if (!confirm("この端末内のコンクール、練習、録音・動画をすべて削除しますか？")) return;
   localStorage.removeItem(STORE_KEY);
   localStorage.removeItem(REMINDER_KEY);
   localStorage.removeItem(BACKUP_KEY);
   localStorage.removeItem(ONBOARDING_KEY);
+  stopActiveMediaStream();
   state.recordings.forEach((recording) => URL.revokeObjectURL(recording.url));
   state.recordings = [];
 
@@ -2428,6 +2528,7 @@ async function clearAllData() {
   state.trialChecks = {};
   state.isSampleData = false;
   state.bpm = 84;
+  state.recordingMode = "audio";
   state.practiceTimerSeconds = 15 * 60;
   state.practiceTimerRemaining = state.practiceTimerSeconds;
   save();
@@ -2481,6 +2582,8 @@ function bind() {
   $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
   $("#startOnboardingButton").addEventListener("click", startOnboarding);
   els.recordButton.addEventListener("click", toggleRecording);
+  els.audioModeButton.addEventListener("click", () => setRecordingMode("audio"));
+  els.videoModeButton.addEventListener("click", () => setRecordingMode("video"));
   $("#confirmReminderButton").addEventListener("click", confirmReminder);
   $("#laterReminderButton").addEventListener("click", () => els.reminderDialog.close());
   $("#exportButton").addEventListener("click", exportData);

@@ -1387,6 +1387,44 @@ input:focus, textarea:focus, select:focus {
 .task-edit-button { width: 100%; margin-top: 10px; }
 
 .record-panel { text-align: center; }
+.record-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .14);
+  padding: 5px;
+}
+.record-mode-toggle button {
+  min-height: 42px;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, .82);
+  font-weight: 900;
+}
+.record-mode-toggle button.active {
+  background: #fff;
+  color: var(--green);
+  box-shadow: 0 8px 20px rgba(18, 33, 31, .18);
+}
+.record-mode-toggle button:disabled {
+  opacity: .72;
+}
+.video-preview {
+  width: min(100%, 280px);
+  aspect-ratio: 3 / 4;
+  display: block;
+  margin: 14px auto 0;
+  border: 3px solid rgba(255, 255, 255, .55);
+  border-radius: 22px;
+  background: rgba(18, 33, 31, .35);
+  object-fit: cover;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, .22);
+}
+.video-preview[hidden] {
+  display: none;
+}
 .record-button {
   display: grid;
   width: 148px;
@@ -1418,7 +1456,13 @@ input:focus, textarea:focus, select:focus {
   gap: 10px;
 }
 
-audio { width: 100%; margin-top: 10px; }
+audio,
+.recording-video { width: 100%; margin-top: 10px; }
+.recording-video {
+  max-height: 420px;
+  border-radius: 14px;
+  background: #111;
+}
 .download-link { display: inline-block; margin-top: 8px; color: var(--green); font-size: 12px; font-weight: 900; }
 .recording-card.favorite {
   border-color: rgba(184, 121, 47, .55);
