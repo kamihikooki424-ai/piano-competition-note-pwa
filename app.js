@@ -1167,9 +1167,38 @@ function deleteCompetition() {
   render();
 }
 
-function updateTask(id, delta) {
+function upsertKidPracticeLog(task) {
+  const date = todayKey();
+  const minutes = Math.max(1, Math.min(240, Number($("#practiceMinutesInput").value || 10)));
+  const line = task.detail
+    ? `こども練習モード：${task.title}（${task.detail}）`
+    : `こども練習モード：${task.title}`;
+  const existing = state.practiceLogs.find((log) => log.date === date && log.source === "kidPractice");
+
+  if (existing) {
+    const lines = new Set(String(existing.memo || "").split("\n").filter(Boolean));
+    lines.add(line);
+    existing.memo = Array.from(lines).join("\n");
+    existing.minutes = Math.max(Number(existing.minutes || 0), minutes);
+    existing.doneSummary = getTaskDoneSummary();
+    return;
+  }
+
+  state.practiceLogs.push({
+    id: createId(),
+    date,
+    minutes,
+    memo: line,
+    doneSummary: getTaskDoneSummary(),
+    source: "kidPractice"
+  });
+}
+
+function updateTask(id, delta, options = {}) {
   if (delta > 0) addPracticeStamp();
+  const task = state.tasks.find((item) => item.id === id);
   state.tasks = state.tasks.map((task) => task.id === id ? { ...task, count: Math.max(0, task.count + delta) } : task);
+  if (delta > 0 && options.createPracticeLog && task) upsertKidPracticeLog(task);
   save();
   render();
 }
@@ -1189,7 +1218,7 @@ function completeHomeMission() {
 function completeKidPracticeTask() {
   const id = els.kidPracticeDoneButton.dataset.kidTaskId;
   if (!id) return;
-  updateTask(id, 1);
+  updateTask(id, 1, { createPracticeLog: true });
 }
 
 function startKidPracticeTimer() {
