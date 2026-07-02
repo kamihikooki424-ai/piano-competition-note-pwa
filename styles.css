@@ -1103,6 +1103,38 @@ input:focus, textarea:focus, select:focus {
 .trial-checklist strong { color: var(--green); font-size: 14px; }
 .trial-checklist small { color: var(--muted); font-size: 12px; line-height: 1.45; }
 
+.trial-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.trial-summary div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  border: 1px solid rgba(39, 102, 123, .18);
+  border-radius: 12px;
+  background: #fff;
+  padding: 11px;
+}
+.trial-summary div.wide {
+  grid-column: 1 / -1;
+  background: #fff7e8;
+  border-color: rgba(184, 121, 47, .32);
+}
+.trial-summary span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+.trial-summary strong {
+  color: var(--green);
+  font-size: 16px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .storage-report {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1463,6 +1495,7 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .score-ring { width: 96px; height: 96px; }
   .score-illustration { right: 18px; bottom: -20px; width: 96px; height: 96px; opacity: .5; }
   .score-type-row, .score-grid { grid-template-columns: 1fr; }
+  .trial-summary { grid-template-columns: 1fr; }
   .storage-report { grid-template-columns: 1fr; }
   .split-actions { grid-template-columns: 1fr; }
   .bottom-nav button { font-size: 11px; }

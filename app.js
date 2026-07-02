@@ -120,6 +120,7 @@ const els = {
   trialInviteOutput: $("#trialInviteOutput"),
   trialProgressLabel: $("#trialProgressLabel"),
   trialChecklist: $("#trialChecklist"),
+  trialSummary: $("#trialSummary"),
   feedbackList: $("#feedbackList"),
   storageReport: $("#storageReport"),
   onboardingDialog: $("#onboardingDialog"),
@@ -1697,9 +1698,31 @@ function formatTrialProgressForShare() {
   return `試用チェック：${progress.done}/${progress.total}完了${remaining.length ? ` / 未確認：${remaining.join("、")}` : " / すべて確認済み"}`;
 }
 
+function getFeedbackAverage() {
+  if (state.feedbacks.length === 0) return null;
+  return state.feedbacks.reduce((sum, feedback) => sum + Number(feedback.rating || 0), 0) / state.feedbacks.length;
+}
+
+function renderTrialSummary() {
+  const progress = getTrialProgress();
+  const remaining = progress.items.filter(([key]) => !state.trialChecks[key]);
+  const average = getFeedbackAverage();
+  const latestStuck = [...state.feedbacks].reverse().find((feedback) => feedback.stuck)?.stuck;
+  const latestRequest = [...state.feedbacks].reverse().find((feedback) => feedback.request)?.request;
+  const nextFix = latestStuck || latestRequest || (remaining[0] ? `${remaining[0][1]}を試す` : "次の試用者を1人追加");
+
+  els.trialSummary.innerHTML = `
+    <div><span>試用件数</span><strong>${state.feedbacks.length}件</strong></div>
+    <div><span>平均評価</span><strong>${average === null ? "-" : `${average.toFixed(1)}/5`}</strong></div>
+    <div><span>チェック</span><strong>${progress.done}/${progress.total}</strong></div>
+    <div class="wide"><span>次に見ること</span><strong>${escapeHtml(nextFix)}</strong></div>
+  `;
+}
+
 function renderTrialTools() {
   els.trialInviteOutput.value = buildTrialInvite();
   renderTrialChecklist();
+  renderTrialSummary();
 
   if (state.feedbacks.length === 0) {
     els.feedbackList.innerHTML = `<div class="notice-card"><strong>フィードバックはまだありません</strong><span>試用してもらった感想をここに記録できます。</span></div>`;
@@ -1753,7 +1776,7 @@ function buildFeedbackSummary() {
   if (state.feedbacks.length === 0) {
     return `試用フィードバックはまだありません。\n${formatTrialProgressForShare()}`;
   }
-  const average = state.feedbacks.reduce((sum, feedback) => sum + Number(feedback.rating || 0), 0) / state.feedbacks.length;
+  const average = getFeedbackAverage();
   const lines = [
     "【ピアノコンクールノート 試用フィードバック】",
     `件数：${state.feedbacks.length}`,
