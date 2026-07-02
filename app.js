@@ -62,6 +62,9 @@ const els = {
   practiceStickerMark: $("#practiceStickerMark"),
   practiceStickerTitle: $("#practiceStickerTitle"),
   practiceStickerText: $("#practiceStickerText"),
+  stampCardText: $("#stampCardText"),
+  stampCardCount: $("#stampCardCount"),
+  stampCardDays: $("#stampCardDays"),
   weeklyPracticeDetail: $("#weeklyPracticeDetail"),
   weeklyPracticeDays: $("#weeklyPracticeDays"),
   readinessDetail: $("#readinessDetail"),
@@ -199,14 +202,14 @@ function getPracticeStats() {
   const last7Days = Array.from({ length: 7 }, (_, index) => {
     const date = dateKeyOffset(today, index - 6);
     const minutes = minutesByDate.get(date) || 0;
-    return { date, minutes, practiced: minutes > 0 };
+    return { date, minutes, practiced: minutes > 0 || hasPracticeStamp(date) };
   });
   const weeklyMinutes = last7Days.reduce((sum, day) => sum + day.minutes, 0);
   const practicedDays = last7Days.filter((day) => day.practiced).length;
   let streak = 0;
   for (let offset = 0; offset > -90; offset -= 1) {
     const date = dateKeyOffset(today, offset);
-    if ((minutesByDate.get(date) || 0) <= 0) break;
+    if ((minutesByDate.get(date) || 0) <= 0 && !hasPracticeStamp(date)) break;
     streak += 1;
   }
   return { last7Days, weeklyMinutes, practicedDays, streak };
@@ -237,10 +240,11 @@ function renderPracticeStats() {
     return `
       <span class="${day.practiced ? "done" : ""}" title="${escapeHtml(label)} ${escapeHtml(formatMinutes(day.minutes))}">
         <em>${escapeHtml(label)}</em>
-        <strong>${day.practiced ? escapeHtml(formatMinutes(day.minutes)) : "-"}</strong>
+        <strong>${day.practiced ? escapeHtml(day.minutes ? formatMinutes(day.minutes) : "★") : "-"}</strong>
       </span>
     `;
   }).join("");
+  renderStampCard(stats);
 }
 
 function renderPracticeSticker() {
@@ -251,6 +255,24 @@ function renderPracticeSticker() {
   els.practiceStickerText.textContent = practicedToday
     ? `よくできました。シール${getPracticeStampCount()}枚です。`
     : "練習記録をつけると、今日のシールがつきます。";
+}
+
+function renderStampCard(stats = getPracticeStats()) {
+  const doneCount = stats.last7Days.filter((day) => day.practiced).length;
+  els.stampCardCount.textContent = `${doneCount}/7`;
+  els.stampCardText.textContent = doneCount >= 7
+    ? "7日ぶん集まりました。よく続いています。"
+    : `あと${7 - doneCount}日で7日ぶん集まります。`;
+  els.stampCardDays.innerHTML = stats.last7Days.map((day) => {
+    const date = parseDate(day.date);
+    const label = date ? `${date.getMonth() + 1}/${date.getDate()}` : "";
+    return `
+      <span class="${day.practiced ? "done" : ""}" aria-label="${escapeHtml(label)} ${day.practiced ? "練習済み" : "未達成"}">
+        <em>${escapeHtml(label)}</em>
+        <strong>${day.practiced ? "★" : "・"}</strong>
+      </span>
+    `;
+  }).join("");
 }
 
 function getNextOpenTask() {

@@ -282,6 +282,69 @@ main { padding-top: 16px; }
 .practice-sticker-card strong { display: block; color: var(--green); }
 .practice-sticker-card span { color: #5b432b; font-size: 13px; line-height: 1.5; }
 
+.stamp-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(184, 121, 47, .24);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .95), rgba(255, 247, 232, .95)),
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(39, 102, 123, .05) 22px 24px);
+  padding: 14px;
+  box-shadow: 0 12px 30px rgba(18, 33, 31, .08);
+}
+.stamp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.stamp-card strong { display: block; color: var(--green); }
+.stamp-card span { color: #5b432b; font-size: 13px; line-height: 1.5; }
+.stamp-card em {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  padding: 7px 10px;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 900;
+}
+.stamp-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 7px;
+}
+.stamp-days span {
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  place-items: center;
+  border: 1px solid rgba(216, 227, 223, .9);
+  border-radius: 16px;
+  background: #fff;
+  color: #8b7a66;
+  text-align: center;
+}
+.stamp-days span.done {
+  border-color: rgba(184, 121, 47, .44);
+  background: #fff1d8;
+  color: var(--gold);
+  box-shadow: inset 0 -4px 0 rgba(184, 121, 47, .16);
+}
+.stamp-days span em {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 10px;
+}
+.stamp-days span strong {
+  color: inherit;
+  font-size: 22px;
+  line-height: 1;
+}
+
 .home-mission-card {
   display: grid;
   gap: 12px;
