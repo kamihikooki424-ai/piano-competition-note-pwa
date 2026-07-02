@@ -40,6 +40,8 @@ const state = {
   practiceTimerId: null
 };
 
+let stampAnimationDate = "";
+
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
@@ -231,6 +233,7 @@ function hasPracticeStamp(date = todayKey()) {
 }
 
 function addPracticeStamp(date = todayKey()) {
+  stampAnimationDate = date;
   state.practiceStamps = { ...(state.practiceStamps || {}), [date]: true };
 }
 
@@ -262,28 +265,40 @@ function renderPracticeSticker() {
   const stats = getPracticeStats();
   const practicedToday = Boolean(stats.last7Days.at(-1)?.practiced || hasPracticeStamp());
   els.practiceStickerMark.textContent = practicedToday ? "★" : "○";
-  els.practiceStickerTitle.textContent = practicedToday ? "今日のシール獲得" : "今日のシール";
+  els.practiceStickerTitle.textContent = practicedToday ? "シールゲット" : "きょうのシール";
   els.practiceStickerText.textContent = practicedToday
     ? `よくできました。シール${getPracticeStampCount()}枚です。`
-    : "練習記録をつけると、今日のシールがつきます。";
+    : "れんしゅうするとシールがつきます。";
 }
 
 function renderStampCard(stats = getPracticeStats()) {
   const doneCount = stats.last7Days.filter((day) => day.practiced).length;
+  const today = todayKey();
   els.stampCardCount.textContent = `${doneCount}/7`;
   els.stampCardText.textContent = doneCount >= 7
-    ? "7日ぶん集まりました。よく続いています。"
-    : `あと${7 - doneCount}日で7日ぶん集まります。`;
+    ? "7こあつまりました。すごい。"
+    : `あと${7 - doneCount}こでいっぱいです。`;
   els.stampCardDays.innerHTML = stats.last7Days.map((day) => {
     const date = parseDate(day.date);
     const label = date ? `${date.getMonth() + 1}/${date.getDate()}` : "";
+    const classes = [
+      day.practiced ? "done" : "",
+      day.date === today ? "today" : "",
+      day.date === stampAnimationDate && day.practiced ? "just-stamped" : ""
+    ].filter(Boolean).join(" ");
     return `
-      <span class="${day.practiced ? "done" : ""}" aria-label="${escapeHtml(label)} ${day.practiced ? "練習済み" : "未達成"}">
+      <span class="${classes}" aria-label="${escapeHtml(label)} ${day.practiced ? "練習済み" : "未達成"}">
         <em>${escapeHtml(label)}</em>
         <strong>${day.practiced ? "★" : "・"}</strong>
       </span>
     `;
   }).join("");
+  if (stampAnimationDate) {
+    const animatedDate = stampAnimationDate;
+    window.setTimeout(() => {
+      if (stampAnimationDate === animatedDate) stampAnimationDate = "";
+    }, 900);
+  }
 }
 
 function getNextOpenTask() {
@@ -295,8 +310,8 @@ function renderHomeMission() {
   if (!task) {
     els.homeMissionCard.style.display = state.tasks.length ? "" : "none";
     if (state.tasks.length) {
-      els.homeMissionTitle.textContent = "今日の課題は完了";
-      els.homeMissionDetail.textContent = "録音して聴き返すか、練習記録を残しましょう。";
+      els.homeMissionTitle.textContent = "きょうはできました";
+      els.homeMissionDetail.textContent = "ろくおんして、きいてみよう。";
       els.homeMissionBar.style.width = "100%";
       els.homeMissionDoneButton.disabled = true;
       els.homeMissionDoneButton.textContent = "完了";
@@ -309,8 +324,8 @@ function renderHomeMission() {
   const remaining = Math.max(0, target - count);
   const percent = Math.min(100, Math.round((count / target) * 100));
   els.homeMissionCard.style.display = "";
-  els.homeMissionTitle.textContent = task.title || "練習する";
-  els.homeMissionDetail.textContent = `あと${remaining}回。${task.detail || "ゆっくり、ていねいに弾きましょう。"}`;
+  els.homeMissionTitle.textContent = task.title || "れんしゅうする";
+  els.homeMissionDetail.textContent = `あと${remaining}かい。${task.detail || "ゆっくり、ていねいにひこう。"}`;
   els.homeMissionBar.style.width = `${percent}%`;
   els.homeMissionDoneButton.disabled = false;
   els.homeMissionDoneButton.textContent = "できた";
@@ -866,10 +881,10 @@ function renderPractice() {
 function renderKidPracticeCard() {
   const task = getNextOpenTask();
   if (!task) {
-    els.kidPracticeTitle.textContent = state.tasks.length ? "今日の課題は完了" : "今日やることを登録しよう";
+    els.kidPracticeTitle.textContent = state.tasks.length ? "きょうはできました" : "やることをいれよう";
     els.kidPracticeDetail.textContent = state.tasks.length
-      ? "よくできました。録音して聴き返すか、練習記録を残しましょう。"
-      : "先生の練習指示を追加すると、ここに大きく表示されます。";
+      ? "よくできました。ろくおんしてきいてみよう。"
+      : "おとなメニューで、やることを入れます。";
     els.kidPracticeCount.textContent = state.tasks.length ? "完了" : "0/1";
     els.kidPracticeBar.style.width = state.tasks.length ? "100%" : "0%";
     els.kidPracticeDoneButton.disabled = true;
@@ -880,8 +895,8 @@ function renderKidPracticeCard() {
   const target = Math.max(1, Number(task.target || 1));
   const count = Math.min(target, Number(task.count || 0));
   const percent = Math.min(100, Math.round((count / target) * 100));
-  els.kidPracticeTitle.textContent = task.title || "練習する";
-  els.kidPracticeDetail.textContent = task.detail || "ゆっくり、ていねいに弾きましょう。";
+  els.kidPracticeTitle.textContent = task.title || "れんしゅうする";
+  els.kidPracticeDetail.textContent = task.detail || "ゆっくり、ていねいにひこう。";
   els.kidPracticeCount.textContent = `${count}/${target}`;
   els.kidPracticeBar.style.width = `${percent}%`;
   els.kidPracticeDoneButton.disabled = false;

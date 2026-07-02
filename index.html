@@ -16,7 +16,7 @@
           <span></span><span></span><span></span><span></span><span></span>
         </div>
         <div>
-          <p class="eyebrow">Piano practice note</p>
+          <p class="eyebrow">ピアノれんしゅう</p>
           <h1>ピアノコンクールノート</h1>
         </div>
       </div>
@@ -43,27 +43,27 @@
             <span id="homeMissionTitle">練習課題を確認中</span>
           </div>
           <div class="mission-progress"><span id="homeMissionBar"></span></div>
-          <p id="homeMissionDetail">先生からの課題を1つずつ進めましょう。</p>
+          <p id="homeMissionDetail">ひとつずつ、やってみよう。</p>
           <div class="mission-actions">
             <button class="mission-done-button" id="homeMissionDoneButton" type="button">できた</button>
-            <button class="text-button" data-view-shortcut="practiceView">くわしく見る</button>
+            <button class="text-button" data-view-shortcut="practiceView">れんしゅうへ</button>
           </div>
         </section>
 
         <section class="practice-sticker-card">
           <div class="sticker-mark" id="practiceStickerMark">★</div>
           <div>
-            <strong id="practiceStickerTitle">今日のシール</strong>
-            <span id="practiceStickerText">練習記録をつけるとシールがつきます。</span>
+            <strong id="practiceStickerTitle">きょうのシール</strong>
+            <span id="practiceStickerText">れんしゅうするとシールがつきます。</span>
           </div>
-          <button class="text-button" data-view-shortcut="practiceView">記録する</button>
+            <button class="text-button" data-view-shortcut="practiceView">れんしゅうへ</button>
         </section>
 
         <section class="stamp-card">
           <div class="stamp-card-head">
             <div>
               <strong>7日スタンプ</strong>
-              <span id="stampCardText">今日から1つずつ集めましょう。</span>
+              <span id="stampCardText">1日1こ、あつめよう。</span>
             </div>
             <em id="stampCardCount">0/7</em>
           </div>
@@ -173,7 +173,7 @@
       <section class="view" id="practiceView">
         <section class="studio-panel">
           <div>
-            <p class="eyebrow">Practice</p>
+            <p class="eyebrow">きょう</p>
             <h2>れんしゅう</h2>
             <p>できたらボタンを押します。</p>
           </div>
@@ -182,11 +182,11 @@
 
         <section class="kid-practice-card" id="kidPracticeCard">
           <div class="kid-practice-head">
-            <span>こども練習モード</span>
+            <span>こどもモード</span>
             <strong id="kidPracticeCount">0/1</strong>
           </div>
-          <h3 id="kidPracticeTitle">今日やることを確認中</h3>
-          <p id="kidPracticeDetail">先生の練習指示を登録すると、ここに大きく表示されます。</p>
+          <h3 id="kidPracticeTitle">きょうやること</h3>
+          <p id="kidPracticeDetail">やることを入れると、ここに出ます。</p>
           <div class="kid-practice-progress"><span id="kidPracticeBar"></span></div>
           <div class="kid-practice-actions">
             <button class="kid-main-button" id="kidPracticeDoneButton" type="button">できた</button>
@@ -194,7 +194,7 @@
               <span id="kidPracticeTimerLabel">10:00</span>
               タイマー
             </button>
-            <button class="kid-sub-button" id="kidPracticeRecordButton" type="button">録音</button>
+            <button class="kid-sub-button" id="kidPracticeRecordButton" type="button">ろくおん</button>
           </div>
         </section>
 
@@ -287,12 +287,12 @@
 
       <section class="view" id="recordView">
         <section class="record-panel">
-          <p class="eyebrow">Recording</p>
-          <h2>弾いたら、すぐ聴き返す</h2>
-          <p id="recordMessage">中央のボタンで録音を開始します。</p>
+          <p class="eyebrow">ろくおん</p>
+          <h2>ひいて、きく</h2>
+          <p id="recordMessage">まんなかのボタンをおします。</p>
           <button id="recordButton" class="record-button" aria-label="録音を開始">
             <span></span>
-            <strong>録音</strong>
+            <strong>ろくおん</strong>
           </button>
           <div id="recordTimer" class="record-timer">0:00</div>
         </section>
@@ -306,8 +306,8 @@
       <section class="view" id="growthView">
         <section class="score-panel">
           <div>
-            <p class="eyebrow">Growth</p>
-            <h2>本番までの伸びを見る</h2>
+            <p class="eyebrow">せいちょう</p>
+            <h2>のびたかな</h2>
             <p>先生・保護者の採点を残して、点数推移と次の課題を確認します。</p>
           </div>
           <img class="score-illustration" src="assets/growth-trophy-illustration.webp" alt="" aria-hidden="true">
@@ -552,10 +552,10 @@
 
     <nav class="bottom-nav">
       <button class="active" data-view="homeView">ホーム</button>
-      <button data-view="practiceView">練習</button>
-      <button data-view="recordView">録音</button>
-      <button data-view="growthView">成長</button>
-      <button data-view="settingsView">設定</button>
+      <button data-view="practiceView">れんしゅう</button>
+      <button data-view="recordView">ろくおん</button>
+      <button data-view="growthView">せいちょう</button>
+      <button data-view="settingsView">おとな</button>
     </nav>
   </div>
 
