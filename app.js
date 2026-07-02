@@ -22,6 +22,7 @@ const state = {
   recordingTimer: null,
   recordings: [],
   scores: [],
+  teacherComments: [],
   feedbacks: [],
   isSampleData: false,
   editingScoreId: "",
@@ -71,6 +72,7 @@ const els = {
   scoreList: $("#scoreList"),
   teacherMemoOutput: $("#teacherMemoOutput"),
   teacherReviewOutput: $("#teacherReviewOutput"),
+  teacherCommentList: $("#teacherCommentList"),
   trialInviteOutput: $("#trialInviteOutput"),
   feedbackList: $("#feedbackList"),
   storageReport: $("#storageReport"),
@@ -160,6 +162,7 @@ function load() {
       state.tasks = parsed.tasks || [];
       state.practiceLogs = parsed.practiceLogs || [];
       state.scores = parsed.scores || [];
+      state.teacherComments = parsed.teacherComments || [];
       state.feedbacks = parsed.feedbacks || [];
       state.isSampleData = Boolean(parsed.isSampleData);
       state.bpm = parsed.bpm || 84;
@@ -237,6 +240,12 @@ function load() {
         next: "左手を小さめにして、メロディを前に出す。"
       }
     ];
+    state.teacherComments = [{
+      id: createId(),
+      date: addDays(-3),
+      body: "音の粒がそろってきました。左手を軽くして、メロディを前に出しましょう。",
+      next: "右手だけゆっくり5回、最後の4小節を部分練習。"
+    }];
     state.isSampleData = true;
   }
 }
@@ -248,6 +257,7 @@ function save() {
     tasks: state.tasks,
     practiceLogs: state.practiceLogs,
     scores: state.scores,
+    teacherComments: state.teacherComments,
     feedbacks: state.feedbacks,
     isSampleData: state.isSampleData,
     bpm: state.bpm,
@@ -553,6 +563,7 @@ function renderGrowth() {
   const latest = sorted.at(-1);
   els.latestScoreHero.textContent = latest ? latest.total : "-";
   updateScorePreview();
+  renderTeacherComments();
 
   if (sorted.length === 0) {
     els.scoreChart.innerHTML = `<div class="notice-card"><strong>採点はまだありません</strong><span>上のフォームから先生・保護者の採点を保存できます。</span></div>`;
@@ -594,6 +605,29 @@ function renderGrowth() {
   });
   els.teacherMemoOutput.value = buildTeacherMemo();
   els.teacherReviewOutput.value = buildTeacherReviewRequest();
+}
+
+function renderTeacherComments() {
+  if (state.teacherComments.length === 0) {
+    els.teacherCommentList.innerHTML = `<div class="notice-card"><strong>先生コメントはまだありません</strong><span>先生から返ってきた指導を貼って保存できます。</span></div>`;
+    return;
+  }
+
+  els.teacherCommentList.innerHTML = [...state.teacherComments].reverse().slice(0, 5).map((comment) => `
+    <article class="teacher-comment-card">
+      <div>
+        <strong>${escapeHtml(formatDate(comment.date))}</strong>
+        <span>先生コメント</span>
+      </div>
+      <p>${escapeHtml(comment.body || "コメントなし")}</p>
+      ${comment.next ? `<p class="next-note">次：${escapeHtml(comment.next)}</p>` : ""}
+      <button class="mini-danger-button" data-delete-teacher-comment="${comment.id}">削除</button>
+    </article>
+  `).join("");
+
+  $$("[data-delete-teacher-comment]").forEach((button) => {
+    button.addEventListener("click", () => deleteTeacherComment(button.dataset.deleteTeacherComment));
+  });
 }
 
 function formatShortDate(value) {
@@ -899,6 +933,30 @@ function deleteScore(id) {
   render();
 }
 
+function saveTeacherComment() {
+  const body = $("#teacherCommentInput").value.trim();
+  const next = $("#teacherCommentNextInput").value.trim();
+  if (!body && !next) return;
+  state.isSampleData = false;
+  state.teacherComments.push({
+    id: createId(),
+    date: todayKey(),
+    body,
+    next
+  });
+  $("#teacherCommentInput").value = "";
+  $("#teacherCommentNextInput").value = "";
+  save();
+  render();
+}
+
+function deleteTeacherComment(id) {
+  if (!confirm("この先生コメントを削除しますか？")) return;
+  state.teacherComments = state.teacherComments.filter((comment) => comment.id !== id);
+  save();
+  render();
+}
+
 function buildTeacherMemo() {
   const nextCompetition = [...state.competitions]
     .filter((competition) => daysUntil(competition.eventDate) === null || daysUntil(competition.eventDate) >= 0)
@@ -906,6 +964,7 @@ function buildTeacherMemo() {
   const latestTeacherScore = getSortedScores().reverse().find((score) => score.type === "teacher");
   const latestScore = latestTeacherScore || getLatestScore();
   const pieces = state.pieces.slice(0, 4);
+  const latestTeacherComment = state.teacherComments.at(-1);
   const openTasks = state.tasks.filter((task) => task.count < task.target).slice(0, 5);
   const recentPracticeLogs = [...state.practiceLogs].reverse().slice(0, 3);
   const importantRecordings = state.recordings.filter((recording) => recording.favorite).slice(0, 3);
@@ -932,6 +991,11 @@ function buildTeacherMemo() {
       : "未登録",
     latestScore?.comment ? `総評：${latestScore.comment}` : "",
     latestScore?.next ? `次の課題：${latestScore.next}` : "",
+    "",
+    "■ 最新の先生コメント",
+    latestTeacherComment
+      ? `${formatDate(latestTeacherComment.date)}：${latestTeacherComment.body || "コメントなし"}${latestTeacherComment.next ? ` / 次：${latestTeacherComment.next}` : ""}`
+      : "未登録",
     "",
     "■ 練習指示の進み具合",
     ...(openTasks.length
@@ -962,6 +1026,7 @@ function buildTeacherReviewRequest() {
   const currentPiece = state.pieces[0];
   const nextTask = state.tasks.find((task) => task.count < task.target);
   const latestPracticeLog = state.practiceLogs.at(-1);
+  const latestTeacherComment = state.teacherComments.at(-1);
   const recording = state.recordings.find((item) => item.favorite) || state.recordings[0];
   const competitionLine = nextCompetition
     ? `${nextCompetition.name} ${nextCompetition.division || ""} / 本番 ${formatDate(nextCompetition.eventDate)}`
@@ -978,6 +1043,9 @@ function buildTeacherReviewRequest() {
   const practiceLine = latestPracticeLog
     ? `${formatDate(latestPracticeLog.date)} ${latestPracticeLog.minutes}分 - ${latestPracticeLog.memo || latestPracticeLog.doneSummary || "メモなし"}`
     : "練習記録未登録";
+  const teacherCommentLine = latestTeacherComment
+    ? `${formatDate(latestTeacherComment.date)} - ${latestTeacherComment.body || ""}${latestTeacherComment.next ? ` / 次：${latestTeacherComment.next}` : ""}`
+    : "先生コメント未登録";
   const recordingLine = recording
     ? `${recording.name}（${recording.createdAt} / ${recording.duration}）${recording.memo ? `：${recording.memo}` : ""}`
     : "録音は別途送ります";
@@ -989,6 +1057,7 @@ function buildTeacherReviewRequest() {
     `曲：${pieceLine}`,
     `確認してほしい録音：${recordingLine}`,
     `最近の採点：${scoreLine}`,
+    `前回の先生コメント：${teacherCommentLine}`,
     `直近の練習：${practiceLine}`,
     `今の練習課題：${taskLine}`,
     "",
@@ -1169,6 +1238,7 @@ function startPersonalSetup() {
     state.tasks = [];
     state.practiceLogs = [];
     state.scores = [];
+    state.teacherComments = [];
     state.feedbacks = [];
     state.isSampleData = false;
     save();
@@ -1565,6 +1635,7 @@ function getStorageReportItems() {
     ["練習指示", `${state.tasks.length}件`],
     ["練習記録", `${state.practiceLogs.length}件`],
     ["採点", `${state.scores.length}件`],
+    ["先生コメント", `${state.teacherComments.length}件`],
     ["録音", `${state.recordings.length}件 / 約${formatBytes(getRecordingBytes())}`],
     ["録音保存確認", unsavedCount ? `未保存 ${unsavedCount}件` : "すべて確認済み"],
     ["試用メモ", `${state.feedbacks.length}件`],
@@ -1601,6 +1672,7 @@ function exportData() {
     tasks: state.tasks,
     practiceLogs: state.practiceLogs,
     scores: state.scores,
+    teacherComments: state.teacherComments,
     feedbacks: state.feedbacks,
     isSampleData: state.isSampleData,
     bpm: state.bpm,
@@ -1629,6 +1701,7 @@ function importData(file) {
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
       state.practiceLogs = Array.isArray(data.practiceLogs) ? data.practiceLogs : [];
       state.scores = Array.isArray(data.scores) ? data.scores : [];
+      state.teacherComments = Array.isArray(data.teacherComments) ? data.teacherComments : [];
       state.feedbacks = Array.isArray(data.feedbacks) ? data.feedbacks : [];
       state.isSampleData = Boolean(data.isSampleData);
       state.bpm = Number(data.bpm || 84);
@@ -1671,6 +1744,7 @@ async function clearAllData() {
   state.tasks = [];
   state.practiceLogs = [];
   state.scores = [];
+  state.teacherComments = [];
   state.feedbacks = [];
   state.isSampleData = false;
   state.bpm = 84;
@@ -1708,6 +1782,7 @@ function bind() {
   $("#cancelScoreEditButton").style.display = "none";
   $("#cancelScoreEditButton").addEventListener("click", resetScoreForm);
   $("#addScoreButton").addEventListener("click", saveScore);
+  $("#saveTeacherCommentButton").addEventListener("click", saveTeacherComment);
   $("#copyTeacherMemoButton").addEventListener("click", copyTeacherMemo);
   $("#copyTeacherReviewButton").addEventListener("click", copyTeacherReviewRequest);
   $("#copyStorageReportButton").addEventListener("click", copyStorageReport);

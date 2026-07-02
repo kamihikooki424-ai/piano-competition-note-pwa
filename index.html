@@ -276,6 +276,21 @@
           </div>
           <textarea id="teacherReviewOutput" class="teacher-memo-output compact" rows="8" readonly></textarea>
         </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>先生コメント</h3>
+              <p>返ってきた指導を家庭練習に残す</p>
+            </div>
+          </div>
+          <div class="teacher-comment-form">
+            <label>先生コメント<textarea id="teacherCommentInput" rows="3" placeholder="例：音の粒は良くなっています。左手をもう少し軽くしましょう。"></textarea></label>
+            <label>次回までの課題<textarea id="teacherCommentNextInput" rows="2" placeholder="例：右手だけゆっくり5回、最後の4小節を録音"></textarea></label>
+            <button class="primary-button" id="saveTeacherCommentButton" type="button">先生コメントを保存</button>
+          </div>
+          <div id="teacherCommentList" class="teacher-comment-list"></div>
+        </section>
       </section>
 
       <section class="view" id="settingsView">
