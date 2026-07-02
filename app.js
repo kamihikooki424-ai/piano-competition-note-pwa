@@ -41,6 +41,7 @@ const state = {
 };
 
 let stampAnimationDate = "";
+let celebrationTimer = 0;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -131,6 +132,7 @@ const els = {
   taskDialog: $("#taskDialog"),
   taskForm: $("#taskForm"),
   reminderDialog: $("#reminderDialog"),
+  celebrationToast: $("#celebrationToast"),
   reminderKicker: $("#reminderKicker"),
   reminderTitle: $("#reminderTitle"),
   reminderBody: $("#reminderBody")
@@ -1228,12 +1230,27 @@ function completeHomeMission() {
   const id = els.homeMissionDoneButton.dataset.homeTaskId;
   if (!id) return;
   updateTask(id, 1);
+  showPracticeCelebration();
 }
 
 function completeKidPracticeTask() {
   const id = els.kidPracticeDoneButton.dataset.kidTaskId;
   if (!id) return;
   updateTask(id, 1, { createPracticeLog: true });
+  showPracticeCelebration();
+}
+
+function showPracticeCelebration() {
+  if (!els.celebrationToast) return;
+  window.clearTimeout(celebrationTimer);
+  els.celebrationToast.classList.remove("show");
+  els.celebrationToast.setAttribute("aria-hidden", "false");
+  void els.celebrationToast.offsetWidth;
+  els.celebrationToast.classList.add("show");
+  celebrationTimer = window.setTimeout(() => {
+    els.celebrationToast.classList.remove("show");
+    els.celebrationToast.setAttribute("aria-hidden", "true");
+  }, 1500);
 }
 
 function startKidPracticeTimer() {
