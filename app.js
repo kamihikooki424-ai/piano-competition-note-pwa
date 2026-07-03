@@ -283,8 +283,8 @@ function renderStampCard(stats = getPracticeStats()) {
   const today = todayKey();
   els.stampCardCount.textContent = `${doneCount}/7`;
   els.stampCardText.textContent = doneCount >= 7
-    ? "7こあつまりました。すごい。"
-    : `あと${7 - doneCount}こでいっぱいです。`;
+    ? "すごい。"
+    : `あと${7 - doneCount}こ`;
   els.stampCardDays.innerHTML = stats.last7Days.map((day) => {
     const date = parseDate(day.date);
     const label = date ? `${date.getMonth() + 1}/${date.getDate()}` : "";
@@ -318,7 +318,7 @@ function renderHomeMission() {
     els.homeMissionCard.style.display = state.tasks.length ? "" : "none";
     if (state.tasks.length) {
       els.homeMissionTitle.textContent = "きょうはできました";
-      els.homeMissionDetail.textContent = "ろくおんして、きいてみよう。";
+      els.homeMissionDetail.textContent = "きろくしよう。";
       els.homeMissionBar.style.width = "100%";
       els.homeMissionDoneButton.disabled = true;
       els.homeMissionDoneButton.textContent = "完了";
@@ -332,7 +332,7 @@ function renderHomeMission() {
   const percent = Math.min(100, Math.round((count / target) * 100));
   els.homeMissionCard.style.display = "";
   els.homeMissionTitle.textContent = task.title || "れんしゅうする";
-  els.homeMissionDetail.textContent = `あと${remaining}かい。${task.detail || "ゆっくり、ていねいにひこう。"}`;
+  els.homeMissionDetail.textContent = `あと${remaining}かい`;
   els.homeMissionBar.style.width = `${percent}%`;
   els.homeMissionDoneButton.disabled = false;
   els.homeMissionDoneButton.textContent = "できた";
@@ -893,7 +893,7 @@ function renderKidPracticeCard() {
   if (!task) {
     els.kidPracticeTitle.textContent = state.tasks.length ? "きょうはできました" : "やることをいれよう";
     els.kidPracticeDetail.textContent = state.tasks.length
-      ? "よくできました。ろくおんしてきいてみよう。"
+      ? "よくできました。"
       : "おとなメニューで、やることを入れます。";
     els.kidPracticeCount.textContent = state.tasks.length ? "完了" : "0/1";
     els.kidPracticeBar.style.width = state.tasks.length ? "100%" : "0%";
@@ -1500,6 +1500,7 @@ function openScoreEditor(id) {
   $("#addScoreButton").textContent = "変更を保存";
   $("#cancelScoreEditButton").style.display = "";
   updateScorePreview();
+  $("#growthMenu").open = true;
   setView("growthView");
   $("#scoreFormTitle").scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2017,7 +2018,7 @@ function renderRecordingMode() {
   els.recordButton.setAttribute("aria-label", isVideo ? "動画を開始" : "録音を開始");
   if (!state.recorder) {
     els.recordButton.querySelector("strong").textContent = isVideo ? "どうが" : "ろくおん";
-    els.recordMessage.textContent = isVideo ? "動画で、手の形も見られます。" : "音だけを、すぐ録れます。";
+  els.recordMessage.textContent = isVideo ? "動画でとります。" : "音だけとります。";
     els.videoPreview.hidden = true;
     els.videoPreview.srcObject = null;
   }

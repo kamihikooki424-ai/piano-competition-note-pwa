@@ -63,7 +63,7 @@
           <div class="stamp-card-head">
             <div>
               <strong>7日スタンプ</strong>
-              <span id="stampCardText">1日1こ、あつめよう。</span>
+              <span id="stampCardText">あつめよう。</span>
             </div>
             <em id="stampCardCount">0/7</em>
           </div>
@@ -76,7 +76,7 @@
           <button data-view-shortcut="growthView"><span>3</span>せいちょう</button>
         </section>
 
-        <details class="parent-menu">
+        <details class="parent-menu home-parent-menu">
           <summary>保護者・先生メニュー</summary>
           <div class="parent-menu-body">
             <section class="setup-card" id="setupCard">
@@ -190,11 +190,11 @@
           <div class="kid-practice-progress"><span id="kidPracticeBar"></span></div>
           <div class="kid-practice-actions">
             <button class="kid-main-button" id="kidPracticeDoneButton" type="button">できた</button>
-            <button class="kid-sub-button" id="kidPracticeTimerButton" type="button">
+            <button class="kid-sub-button kid-timer-button" id="kidPracticeTimerButton" type="button">
               <span id="kidPracticeTimerLabel">10:00</span>
               タイマー
             </button>
-            <button class="kid-sub-button" id="kidPracticeRecordButton" type="button">きろく</button>
+            <button class="kid-sub-button kid-record-button" id="kidPracticeRecordButton" type="button">きろく</button>
           </div>
         </section>
 
@@ -289,12 +289,12 @@
         <section class="record-panel">
           <p class="eyebrow">きろく</p>
           <h2>ひいて、みる</h2>
-          <p id="recordMessage">まんなかのボタンをおします。</p>
+          <p id="recordMessage">ボタンをおします。</p>
           <div class="record-mode-toggle" role="group" aria-label="記録モード">
             <button id="audioModeButton" class="active" type="button">音だけ</button>
             <button id="videoModeButton" type="button">動画</button>
           </div>
-          <p class="record-note">動画は容量が大きいので、大事な1回だけがおすすめです。</p>
+          <p class="record-note">動画は大事な1回だけ。</p>
           <video id="videoPreview" class="video-preview" muted playsinline hidden></video>
           <button id="recordButton" class="record-button" aria-label="録音を開始">
             <span></span>
@@ -314,7 +314,7 @@
           <div>
             <p class="eyebrow">せいちょう</p>
             <h2>のびたかな</h2>
-            <p>先生・保護者の採点を残して、点数推移と次の課題を確認します。</p>
+            <p>点数を見ます。</p>
           </div>
           <img class="score-illustration" src="assets/growth-trophy-illustration.webp" alt="" aria-hidden="true">
           <div class="score-ring"><strong id="latestScoreHero">-</strong><span>最新点</span></div>
@@ -323,86 +323,91 @@
         <section class="tool-card">
           <div class="tool-heading">
             <div>
-              <h3 id="scoreFormTitle">採点を追加</h3>
-              <p id="scoreFormSubcopy">6項目から総合点を自動計算</p>
-            </div>
-            <strong class="timer-display" id="scoreTotalPreview">0点</strong>
-          </div>
-          <div class="score-type-row">
-            <label>採点者
-              <select id="scoreTypeInput">
-                <option value="teacher">先生</option>
-                <option value="parent">保護者</option>
-                <option value="competition">コンクール</option>
-                <option value="ai">AI講評メモ</option>
-              </select>
-            </label>
-            <label>採点日<input id="scoreDateInput" type="date"></label>
-          </div>
-          <div class="score-grid">
-            <label>音の質・響き /25<input class="score-input" id="toneScoreInput" type="number" min="0" max="25" value="18"></label>
-            <label>拍感・テンポ /20<input class="score-input" id="tempoScoreInput" type="number" min="0" max="20" value="14"></label>
-            <label>左右バランス /15<input class="score-input" id="balanceScoreInput" type="number" min="0" max="15" value="10"></label>
-            <label>フレーズ /15<input class="score-input" id="phraseScoreInput" type="number" min="0" max="15" value="10"></label>
-            <label>曲らしさ /15<input class="score-input" id="styleScoreInput" type="number" min="0" max="15" value="10"></label>
-            <label>本番完成度 /10<input class="score-input" id="stageScoreInput" type="number" min="0" max="10" value="6"></label>
-          </div>
-          <label>総評<textarea id="scoreCommentInput" rows="3" placeholder="良かった点、直したい点"></textarea></label>
-          <label>次の課題<textarea id="scoreNextInput" rows="3" placeholder="次回までにやること"></textarea></label>
-          <div class="split-actions">
-            <button class="secondary-button" id="cancelScoreEditButton" type="button">新規に戻す</button>
-            <button class="primary-button" id="addScoreButton" type="button">採点を保存</button>
-          </div>
-        </section>
-
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
               <h3>点数推移</h3>
-              <p>最近の採点を折れ線風に表示</p>
+              <p>いまの点を見ます</p>
             </div>
           </div>
           <div id="scoreChart" class="score-chart"></div>
           <div id="scoreList" class="score-list"></div>
         </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>先生に渡す共有メモ</h3>
-              <p>端末内データから文章を作成</p>
-            </div>
-            <button class="secondary-button" id="copyTeacherMemoButton">コピー</button>
-          </div>
-          <textarea id="teacherMemoOutput" class="teacher-memo-output" rows="9" readonly></textarea>
-        </section>
+        <details class="parent-menu growth-menu" id="growthMenu">
+          <summary>おとなの記録</summary>
+          <div class="parent-menu-body">
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3 id="scoreFormTitle">採点を追加</h3>
+                  <p id="scoreFormSubcopy">6項目から総合点を自動計算</p>
+                </div>
+                <strong class="timer-display" id="scoreTotalPreview">0点</strong>
+              </div>
+              <div class="score-type-row">
+                <label>採点者
+                  <select id="scoreTypeInput">
+                    <option value="teacher">先生</option>
+                    <option value="parent">保護者</option>
+                    <option value="competition">コンクール</option>
+                    <option value="ai">AI講評メモ</option>
+                  </select>
+                </label>
+                <label>採点日<input id="scoreDateInput" type="date"></label>
+              </div>
+              <div class="score-grid">
+                <label>音の質・響き /25<input class="score-input" id="toneScoreInput" type="number" min="0" max="25" value="18"></label>
+                <label>拍感・テンポ /20<input class="score-input" id="tempoScoreInput" type="number" min="0" max="20" value="14"></label>
+                <label>左右バランス /15<input class="score-input" id="balanceScoreInput" type="number" min="0" max="15" value="10"></label>
+                <label>フレーズ /15<input class="score-input" id="phraseScoreInput" type="number" min="0" max="15" value="10"></label>
+                <label>曲らしさ /15<input class="score-input" id="styleScoreInput" type="number" min="0" max="15" value="10"></label>
+                <label>本番完成度 /10<input class="score-input" id="stageScoreInput" type="number" min="0" max="10" value="6"></label>
+              </div>
+              <label>総評<textarea id="scoreCommentInput" rows="3" placeholder="良かった点、直したい点"></textarea></label>
+              <label>次の課題<textarea id="scoreNextInput" rows="3" placeholder="次回までにやること"></textarea></label>
+              <div class="split-actions">
+                <button class="secondary-button" id="cancelScoreEditButton" type="button">新規に戻す</button>
+                <button class="primary-button" id="addScoreButton" type="button">採点を保存</button>
+              </div>
+            </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>先生チェック依頼</h3>
-              <p>録音を送る時に一緒に貼る文章</p>
-            </div>
-            <button class="secondary-button" id="copyTeacherReviewButton">コピー</button>
-          </div>
-          <textarea id="teacherReviewOutput" class="teacher-memo-output compact" rows="8" readonly></textarea>
-        </section>
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>先生に渡す共有メモ</h3>
+                  <p>端末内データから文章を作成</p>
+                </div>
+                <button class="secondary-button" id="copyTeacherMemoButton">コピー</button>
+              </div>
+              <textarea id="teacherMemoOutput" class="teacher-memo-output" rows="9" readonly></textarea>
+            </section>
 
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
-              <h3>先生コメント</h3>
-              <p>返ってきた指導を家庭練習に残す</p>
-            </div>
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>先生チェック依頼</h3>
+                  <p>録音を送る時に一緒に貼る文章</p>
+                </div>
+                <button class="secondary-button" id="copyTeacherReviewButton">コピー</button>
+              </div>
+              <textarea id="teacherReviewOutput" class="teacher-memo-output compact" rows="8" readonly></textarea>
+            </section>
+
+            <section class="tool-card">
+              <div class="tool-heading">
+                <div>
+                  <h3>先生コメント</h3>
+                  <p>返ってきた指導を家庭練習に残す</p>
+                </div>
+              </div>
+              <div class="teacher-comment-form">
+                <label>先生コメント<textarea id="teacherCommentInput" rows="3" placeholder="例：音の粒は良くなっています。左手をもう少し軽くしましょう。"></textarea></label>
+                <label>次回までの課題<textarea id="teacherCommentNextInput" rows="2" placeholder="例：右手だけゆっくり5回、最後の4小節を録音"></textarea></label>
+                <label class="inline-check"><input id="teacherCommentTaskInput" type="checkbox" checked> 次回課題を練習カウンターにも追加</label>
+                <button class="primary-button" id="saveTeacherCommentButton" type="button">先生コメントを保存</button>
+              </div>
+              <div id="teacherCommentList" class="teacher-comment-list"></div>
+            </section>
           </div>
-          <div class="teacher-comment-form">
-            <label>先生コメント<textarea id="teacherCommentInput" rows="3" placeholder="例：音の粒は良くなっています。左手をもう少し軽くしましょう。"></textarea></label>
-            <label>次回までの課題<textarea id="teacherCommentNextInput" rows="2" placeholder="例：右手だけゆっくり5回、最後の4小節を録音"></textarea></label>
-            <label class="inline-check"><input id="teacherCommentTaskInput" type="checkbox" checked> 次回課題を練習カウンターにも追加</label>
-            <button class="primary-button" id="saveTeacherCommentButton" type="button">先生コメントを保存</button>
-          </div>
-          <div id="teacherCommentList" class="teacher-comment-list"></div>
-        </section>
+        </details>
       </section>
 
       <section class="view" id="settingsView">
