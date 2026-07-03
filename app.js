@@ -18,6 +18,7 @@ const state = {
   tasks: [],
   practiceLogs: [],
   practiceStamps: {},
+  lessonSchedules: [],
   view: "homeView",
   bpm: 84,
   beat: 0,
@@ -60,6 +61,7 @@ const els = {
   readinessScoreLabel: $("#readinessScoreLabel"),
   homeStatusList: $("#homeStatusList"),
   todayPracticeLabel: $("#todayPracticeLabel"),
+  nextLessonLabel: $("#nextLessonLabel"),
   homeMissionCard: $("#homeMissionCard"),
   homeMissionTitle: $("#homeMissionTitle"),
   homeMissionDetail: $("#homeMissionDetail"),
@@ -98,6 +100,7 @@ const els = {
   childGradeInput: $("#childGradeInput"),
   childBirthYearInput: $("#childBirthYearInput"),
   childMemoInput: $("#childMemoInput"),
+  lessonScheduleList: $("#lessonScheduleList"),
   competitionList: $("#competitionList"),
   pieceList: $("#pieceList"),
   taskList: $("#taskList"),
@@ -483,6 +486,7 @@ function load() {
       state.tasks = parsed.tasks || [];
       state.practiceLogs = parsed.practiceLogs || [];
       state.practiceStamps = parsed.practiceStamps || {};
+      state.lessonSchedules = Array.isArray(parsed.lessonSchedules) ? parsed.lessonSchedules : [];
       state.scores = parsed.scores || [];
       state.teacherComments = parsed.teacherComments || [];
       state.feedbacks = parsed.feedbacks || [];
@@ -576,6 +580,13 @@ function load() {
       body: "音の粒がそろってきました。左手を軽くして、メロディを前に出しましょう。",
       next: "右手だけゆっくり5回、最後の4小節を部分練習。"
     }];
+    state.lessonSchedules = [{
+      id: createId(),
+      date: addDays(6),
+      time: "16:30",
+      title: "通常レッスン",
+      memo: "録音を1つ見てもらう"
+    }];
     state.isSampleData = true;
   }
 }
@@ -588,6 +599,7 @@ function save() {
     tasks: state.tasks,
     practiceLogs: state.practiceLogs,
     practiceStamps: state.practiceStamps,
+    lessonSchedules: state.lessonSchedules,
     scores: state.scores,
     teacherComments: state.teacherComments,
     feedbacks: state.feedbacks,
@@ -604,6 +616,7 @@ function render() {
   renderPractice();
   renderRecordingMode();
   renderRecordings();
+  renderLessonSchedules();
   renderGrowth();
   renderTrialTools();
   renderChildProfile();
@@ -636,6 +649,7 @@ function renderHome() {
   els.todayPracticeLabel.textContent = nextTask
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。音か動画で見返しましょう。";
+  renderNextLessonSummary();
   renderHomeMission();
   renderPracticeStats();
   renderPracticeSticker();
@@ -779,6 +793,85 @@ function renderHomeStatus() {
   els.homeStatusList.querySelectorAll("[data-view-shortcut]").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.viewShortcut));
   });
+}
+
+function getSortedLessonSchedules() {
+  return [...(state.lessonSchedules || [])].sort((a, b) => {
+    const aTime = `${a.date || "9999-12-31"}T${a.time || "23:59"}`;
+    const bTime = `${b.date || "9999-12-31"}T${b.time || "23:59"}`;
+    return aTime.localeCompare(bTime);
+  });
+}
+
+function getUpcomingLessonSchedules() {
+  const today = todayKey();
+  return getSortedLessonSchedules().filter((item) => !item.date || item.date >= today);
+}
+
+function lessonScheduleLabel(item) {
+  const date = item.date ? formatDate(item.date) : "日付未設定";
+  return `${date}${item.time ? ` ${item.time}` : ""}`;
+}
+
+function renderNextLessonSummary() {
+  const next = getUpcomingLessonSchedules()[0];
+  els.nextLessonLabel.textContent = next
+    ? `${lessonScheduleLabel(next)} ${next.title || "レッスン"}`
+    : "予定はまだありません";
+}
+
+function renderLessonSchedules() {
+  if (!els.lessonScheduleList) return;
+  const items = getSortedLessonSchedules();
+  if (items.length === 0) {
+    els.lessonScheduleList.innerHTML = `<div class="notice-card"><strong>予定はまだありません</strong><span>レッスン日を入れると一覧で見られます。</span></div>`;
+    return;
+  }
+
+  els.lessonScheduleList.innerHTML = items.map((item) => {
+    const isPast = item.date && item.date < todayKey();
+    return `
+      <article class="lesson-schedule-card ${isPast ? "past" : ""}">
+        <div>
+          <strong>${escapeHtml(lessonScheduleLabel(item))}</strong>
+          <span>${escapeHtml(item.title || "レッスン")}</span>
+          ${item.memo ? `<small>${escapeHtml(item.memo)}</small>` : ""}
+        </div>
+        <button class="mini-danger-button" data-delete-lesson="${item.id}" type="button">削除</button>
+      </article>
+    `;
+  }).join("");
+
+  els.lessonScheduleList.querySelectorAll("[data-delete-lesson]").forEach((button) => {
+    button.addEventListener("click", () => deleteLessonSchedule(button.dataset.deleteLesson));
+  });
+}
+
+function addLessonSchedule() {
+  const date = $("#lessonDateInput").value;
+  if (!date) {
+    $("#lessonDateInput").focus();
+    return;
+  }
+  state.isSampleData = false;
+  state.lessonSchedules.push({
+    id: createId(),
+    date,
+    time: $("#lessonTimeInput").value,
+    title: $("#lessonTitleInput").value.trim() || "レッスン",
+    memo: $("#lessonMemoInput").value.trim()
+  });
+  $("#lessonTimeInput").value = "";
+  $("#lessonTitleInput").value = "";
+  $("#lessonMemoInput").value = "";
+  save();
+  render();
+}
+
+function deleteLessonSchedule(id) {
+  state.lessonSchedules = state.lessonSchedules.filter((item) => item.id !== id);
+  save();
+  render();
 }
 
 function getChildProfileSummary() {
@@ -1509,6 +1602,7 @@ function resetScoreForm() {
   state.editingScoreId = "";
   $("#scoreTypeInput").value = "teacher";
   $("#scoreDateInput").value = todayKey();
+  $("#lessonDateInput").value = todayKey();
   $("#toneScoreInput").value = "18";
   $("#tempoScoreInput").value = "14";
   $("#balanceScoreInput").value = "10";
@@ -2400,6 +2494,7 @@ function getStorageReportItems() {
     ["プロフィール", state.childProfile?.name ? "登録済み" : "未登録"],
     ["コンクール", `${state.competitions.length}件`],
     ["曲", `${state.pieces.length}件`],
+    ["レッスン予定", `${state.lessonSchedules.length}件`],
     ["練習指示", `${state.tasks.length}件`],
     ["練習記録", `${state.practiceLogs.length}件`],
     ["シール", `${getPracticeStampCount()}枚`],
@@ -2441,6 +2536,7 @@ function exportData() {
     competitions: state.competitions,
     pieces: state.pieces,
     tasks: state.tasks,
+    lessonSchedules: state.lessonSchedules,
     practiceLogs: state.practiceLogs,
     practiceStamps: state.practiceStamps,
     scores: state.scores,
@@ -2473,6 +2569,7 @@ function importData(file) {
       state.competitions = Array.isArray(data.competitions) ? data.competitions : [];
       state.pieces = Array.isArray(data.pieces) ? data.pieces : [];
       state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
+      state.lessonSchedules = Array.isArray(data.lessonSchedules) ? data.lessonSchedules : [];
       state.practiceLogs = Array.isArray(data.practiceLogs) ? data.practiceLogs : [];
       state.practiceStamps = data.practiceStamps || {};
       state.scores = Array.isArray(data.scores) ? data.scores : [];
@@ -2521,6 +2618,7 @@ async function clearAllData() {
   state.childProfile = normalizeChildProfile();
   state.pieces = [];
   state.tasks = [];
+  state.lessonSchedules = [];
   state.practiceLogs = [];
   state.practiceStamps = {};
   state.scores = [];
@@ -2580,6 +2678,7 @@ function bind() {
   $("#showSetupGuideButton").addEventListener("click", () => showOnboarding(true));
   $("#startPersonalSetupButton").addEventListener("click", startPersonalSetup);
   $("#saveChildProfileButton").addEventListener("click", saveChildProfile);
+  $("#addLessonButton").addEventListener("click", addLessonSchedule);
   $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
   $("#startOnboardingButton").addEventListener("click", startOnboarding);
   els.recordButton.addEventListener("click", toggleRecording);

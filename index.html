@@ -107,6 +107,12 @@
               <button class="text-button" data-view-shortcut="practiceView">練習を開く</button>
             </section>
 
+            <section class="today-card">
+              <strong>次のレッスン</strong>
+              <span id="nextLessonLabel">予定を確認中</span>
+              <button class="text-button" data-view-shortcut="settingsView">予定へ</button>
+            </section>
+
             <section class="home-status-card">
               <div class="tool-heading">
                 <div>
@@ -441,6 +447,23 @@
         <section class="notice-card" id="backupReminderCard">
           <strong>バックアップ確認</strong>
           <span id="backupReminderText">バックアップ状況を確認中です。</span>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h2>レッスン予定</h2>
+              <p>次の予定を入れます</p>
+            </div>
+          </div>
+          <div class="lesson-form">
+            <label>日付<input id="lessonDateInput" type="date"></label>
+            <label>時間<input id="lessonTimeInput" type="time"></label>
+            <label>内容<input id="lessonTitleInput" type="text" placeholder="例：通常レッスン"></label>
+            <label>メモ<textarea id="lessonMemoInput" rows="2" placeholder="持ち物、先生に聞くこと"></textarea></label>
+            <button class="primary-button" id="addLessonButton" type="button">予定を追加</button>
+          </div>
+          <div id="lessonScheduleList" class="lesson-schedule-list"></div>
         </section>
 
         <section class="tool-card">
