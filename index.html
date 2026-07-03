@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#16332f">
-  <title>ピアノ音</title>
+  <title>ピアノノート</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -17,7 +17,7 @@
         </div>
         <div>
           <p class="eyebrow">ピアノれんしゅう</p>
-          <h1>ピアノ音</h1>
+          <h1>ピアノノート</h1>
         </div>
       </div>
       <button class="round-button" id="openCompetitionButton" aria-label="コンクールを追加">＋</button>
@@ -73,7 +73,7 @@
         <section class="month-schedule-card">
           <div class="month-schedule-head">
             <div>
-              <strong>1か月の予定</strong>
+              <strong>1ヶ月の予定</strong>
               <span id="monthScheduleSummary">予定を確認中</span>
             </div>
             <button class="text-button" data-view-shortcut="settingsView" type="button">予定を入れる</button>
@@ -464,16 +464,28 @@
         <section class="tool-card">
           <div class="tool-heading">
             <div>
-              <h2>レッスン予定</h2>
-              <p>次の予定を入れます</p>
+              <h2>1ヶ月の予定</h2>
+              <p>レッスン、準備、申込などを入れます</p>
             </div>
           </div>
           <div class="lesson-form">
             <label>日付<input id="lessonDateInput" type="date"></label>
             <label>時間<input id="lessonTimeInput" type="time"></label>
-            <label>内容<input id="lessonTitleInput" type="text" placeholder="例：通常レッスン"></label>
-            <label>メモ<textarea id="lessonMemoInput" rows="2" placeholder="持ち物、先生に聞くこと"></textarea></label>
+            <label>
+              種類
+              <select id="lessonTypeInput">
+                <option value="レッスン">レッスン</option>
+                <option value="準備">準備</option>
+                <option value="申込">申込</option>
+                <option value="練習">練習</option>
+                <option value="本番">本番</option>
+                <option value="その他">その他</option>
+              </select>
+            </label>
+            <label>内容<input id="lessonTitleInput" type="text" placeholder="例：衣装の準備"></label>
+            <label>メモ<textarea id="lessonMemoInput" rows="2" placeholder="持ち物、準備すること、先生に聞くこと"></textarea></label>
             <button class="primary-button" id="addLessonButton" type="button">予定を追加</button>
+            <button class="secondary-button" id="cancelLessonEditButton" type="button">編集をやめる</button>
           </div>
           <div id="lessonScheduleList" class="lesson-schedule-list"></div>
         </section>

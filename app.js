@@ -37,6 +37,7 @@ const state = {
   feedbacks: [],
   trialChecks: {},
   isSampleData: false,
+  editingLessonScheduleId: "",
   editingScoreId: "",
   practiceTimerSeconds: 15 * 60,
   practiceTimerRemaining: 15 * 60,
@@ -586,8 +587,16 @@ function load() {
       id: createId(),
       date: addDays(6),
       time: "16:30",
+      type: "レッスン",
       title: "通常レッスン",
       memo: "録音を1つ見てもらう"
+    }, {
+      id: createId(),
+      date: addDays(10),
+      time: "",
+      type: "準備",
+      title: "申込書と衣装を確認",
+      memo: "写真、参加料、曲名をそろえる"
     }];
     state.isSampleData = true;
   }
@@ -816,6 +825,10 @@ function lessonScheduleLabel(item) {
   return `${date}${item.time ? ` ${item.time}` : ""}`;
 }
 
+function getScheduleType(item) {
+  return item.type || "レッスン";
+}
+
 function isDateWithinNextMonth(value) {
   const days = daysUntil(value);
   return days !== null && days >= 0 && days <= 30;
@@ -828,8 +841,8 @@ function getMonthScheduleItems() {
       id: `lesson-${item.id}`,
       date: item.date,
       time: item.time || "",
-      type: "レッスン",
-      title: item.title || "レッスン",
+      type: getScheduleType(item),
+      title: item.title || getScheduleType(item),
       detail: item.memo || "ピアノの日",
       view: "settingsView"
     }));
@@ -879,7 +892,7 @@ function renderMonthSchedule() {
     els.monthScheduleList.innerHTML = `
       <div class="month-schedule-empty">
         <strong>予定なし</strong>
-        <span>レッスン日や本番日を入れるとここに出ます。</span>
+        <span>レッスン、準備、本番を入れるとここに出ます。</span>
       </div>
     `;
     return;
@@ -902,9 +915,9 @@ function renderMonthSchedule() {
 }
 
 function renderNextLessonSummary() {
-  const next = getUpcomingLessonSchedules()[0];
+  const next = getUpcomingLessonSchedules().find((item) => getScheduleType(item) === "レッスン") || getUpcomingLessonSchedules()[0];
   els.nextLessonLabel.textContent = next
-    ? `${lessonScheduleLabel(next)} ${next.title || "レッスン"}`
+    ? `${lessonScheduleLabel(next)} ${next.title || getScheduleType(next)}`
     : "予定はまだありません";
 }
 
@@ -912,7 +925,7 @@ function renderLessonSchedules() {
   if (!els.lessonScheduleList) return;
   const items = getSortedLessonSchedules();
   if (items.length === 0) {
-    els.lessonScheduleList.innerHTML = `<div class="notice-card"><strong>予定はまだありません</strong><span>レッスン日を入れると一覧で見られます。</span></div>`;
+    els.lessonScheduleList.innerHTML = `<div class="notice-card"><strong>予定はまだありません</strong><span>準備やレッスン日を入れると一覧で見られます。</span></div>`;
     return;
   }
 
@@ -922,14 +935,20 @@ function renderLessonSchedules() {
       <article class="lesson-schedule-card ${isPast ? "past" : ""}">
         <div>
           <strong>${escapeHtml(lessonScheduleLabel(item))}</strong>
-          <span>${escapeHtml(item.title || "レッスン")}</span>
+          <span><em>${escapeHtml(getScheduleType(item))}</em>${escapeHtml(item.title || getScheduleType(item))}</span>
           ${item.memo ? `<small>${escapeHtml(item.memo)}</small>` : ""}
         </div>
-        <button class="mini-danger-button" data-delete-lesson="${item.id}" type="button">削除</button>
+        <div class="lesson-schedule-actions">
+          <button class="mini-action-button" data-edit-lesson="${item.id}" type="button">編集</button>
+          <button class="mini-danger-button" data-delete-lesson="${item.id}" type="button">削除</button>
+        </div>
       </article>
     `;
   }).join("");
 
+  els.lessonScheduleList.querySelectorAll("[data-edit-lesson]").forEach((button) => {
+    button.addEventListener("click", () => editLessonSchedule(button.dataset.editLesson));
+  });
   els.lessonScheduleList.querySelectorAll("[data-delete-lesson]").forEach((button) => {
     button.addEventListener("click", () => deleteLessonSchedule(button.dataset.deleteLesson));
   });
@@ -942,22 +961,53 @@ function addLessonSchedule() {
     return;
   }
   state.isSampleData = false;
-  state.lessonSchedules.push({
-    id: createId(),
+  const type = $("#lessonTypeInput").value || "レッスン";
+  const item = {
+    id: state.editingLessonScheduleId || createId(),
     date,
     time: $("#lessonTimeInput").value,
-    title: $("#lessonTitleInput").value.trim() || "レッスン",
+    type,
+    title: $("#lessonTitleInput").value.trim() || type,
     memo: $("#lessonMemoInput").value.trim()
-  });
-  $("#lessonTimeInput").value = "";
-  $("#lessonTitleInput").value = "";
-  $("#lessonMemoInput").value = "";
+  };
+  if (state.editingLessonScheduleId) {
+    state.lessonSchedules = state.lessonSchedules.map((schedule) => schedule.id === state.editingLessonScheduleId ? item : schedule);
+  } else {
+    state.lessonSchedules.push(item);
+  }
+  resetLessonScheduleForm();
   save();
   render();
 }
 
+function editLessonSchedule(id) {
+  const item = state.lessonSchedules.find((schedule) => schedule.id === id);
+  if (!item) return;
+  state.editingLessonScheduleId = id;
+  $("#lessonDateInput").value = item.date || todayKey();
+  $("#lessonTimeInput").value = item.time || "";
+  $("#lessonTypeInput").value = getScheduleType(item);
+  $("#lessonTitleInput").value = item.title || "";
+  $("#lessonMemoInput").value = item.memo || "";
+  $("#addLessonButton").textContent = "変更を保存";
+  $("#cancelLessonEditButton").style.display = "";
+  $("#lessonDateInput").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function resetLessonScheduleForm() {
+  state.editingLessonScheduleId = "";
+  $("#lessonDateInput").value = todayKey();
+  $("#lessonTimeInput").value = "";
+  $("#lessonTypeInput").value = "レッスン";
+  $("#lessonTitleInput").value = "";
+  $("#lessonMemoInput").value = "";
+  $("#addLessonButton").textContent = "予定を追加";
+  $("#cancelLessonEditButton").style.display = "none";
+}
+
 function deleteLessonSchedule(id) {
   state.lessonSchedules = state.lessonSchedules.filter((item) => item.id !== id);
+  if (state.editingLessonScheduleId === id) resetLessonScheduleForm();
   save();
   render();
 }
@@ -1690,7 +1740,6 @@ function resetScoreForm() {
   state.editingScoreId = "";
   $("#scoreTypeInput").value = "teacher";
   $("#scoreDateInput").value = todayKey();
-  $("#lessonDateInput").value = todayKey();
   $("#toneScoreInput").value = "18";
   $("#tempoScoreInput").value = "14";
   $("#balanceScoreInput").value = "10";
@@ -1903,7 +1952,7 @@ function roleLabel(role) {
 function buildTrialInvite() {
   const trialItems = trialCheckDefinitions().map(([, title]) => `・${title}`);
   return [
-    "【ピアノ音 試用URL】",
+    "【ピアノノート 試用URL】",
     PUBLIC_APP_URL,
     "",
     "■ 使い始め",
@@ -2055,7 +2104,7 @@ function buildFeedbackSummary() {
   }
   const average = getFeedbackAverage();
   const lines = [
-    "【ピアノ音 試用フィードバック】",
+    "【ピアノノート 試用フィードバック】",
     `件数：${state.feedbacks.length}`,
     `平均評価：${average.toFixed(1)} / 5`,
     formatTrialProgressForShare(),
@@ -2582,7 +2631,7 @@ function getStorageReportItems() {
     ["プロフィール", state.childProfile?.name ? "登録済み" : "未登録"],
     ["コンクール", `${state.competitions.length}件`],
     ["曲", `${state.pieces.length}件`],
-    ["レッスン予定", `${state.lessonSchedules.length}件`],
+    ["1ヶ月の予定", `${state.lessonSchedules.length}件`],
     ["練習指示", `${state.tasks.length}件`],
     ["練習記録", `${state.practiceLogs.length}件`],
     ["シール", `${getPracticeStampCount()}枚`],
@@ -2604,7 +2653,7 @@ function renderStorageReport() {
 
 function buildStorageReport() {
   return [
-    "【ピアノ音 端末内データ診断】",
+    "【ピアノノート 端末内データ診断】",
     `作成日：${formatDate(todayKey())}`,
     "",
     ...getStorageReportItems().map(([label, value]) => `${label}：${value}`),
@@ -2767,6 +2816,8 @@ function bind() {
   $("#startPersonalSetupButton").addEventListener("click", startPersonalSetup);
   $("#saveChildProfileButton").addEventListener("click", saveChildProfile);
   $("#addLessonButton").addEventListener("click", addLessonSchedule);
+  $("#cancelLessonEditButton").addEventListener("click", resetLessonScheduleForm);
+  resetLessonScheduleForm();
   $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
   $("#startOnboardingButton").addEventListener("click", startOnboarding);
   els.recordButton.addEventListener("click", toggleRecording);

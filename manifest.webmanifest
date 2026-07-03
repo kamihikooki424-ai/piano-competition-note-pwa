@@ -1,6 +1,6 @@
 {
-  "name": "ピアノ音",
-  "short_name": "ピアノ音",
+  "name": "ピアノノート",
+  "short_name": "ピアノノート",
   "description": "ピアノコンクールに向けた練習、録音、予定、申込締切を端末内で管理する無料PWAです。",
   "start_url": "./index.html",
   "scope": "./",

@@ -1071,8 +1071,8 @@ main { padding-top: 12px; }
   gap: 10px;
   margin-top: 12px;
 }
-.lesson-form label:nth-child(3),
 .lesson-form label:nth-child(4),
+.lesson-form label:nth-child(5),
 .lesson-form button {
   grid-column: 1 / -1;
 }
@@ -1098,6 +1098,10 @@ main { padding-top: 12px; }
 .lesson-schedule-card.past {
   opacity: .58;
 }
+.lesson-schedule-actions {
+  display: flex;
+  gap: 6px;
+}
 .lesson-schedule-card strong,
 .lesson-schedule-card span,
 .lesson-schedule-card small {
@@ -1108,10 +1112,23 @@ main { padding-top: 12px; }
   font-size: 13px;
 }
 .lesson-schedule-card span {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 3px;
   color: var(--ink);
   font-size: 16px;
   font-weight: 900;
+}
+.lesson-schedule-card em {
+  border-radius: 999px;
+  background: #e9f3ee;
+  padding: 4px 7px;
+  color: var(--green);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1;
 }
 .lesson-schedule-card small {
   margin-top: 4px;
