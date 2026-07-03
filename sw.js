@@ -1,4 +1,4 @@
-const CACHE_NAME = "piano-note-zero-cost-v36";
+const CACHE_NAME = "piano-note-zero-cost-v37";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/piano-practice-illustration.webp",
+  "./assets/home-piano-hero-v2.png",
   "./assets/growth-trophy-illustration.webp",
   "./assets/trial-checklist-illustration.webp"
 ];
