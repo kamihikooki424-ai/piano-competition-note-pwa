@@ -626,6 +626,145 @@ main { padding-top: 12px; }
   color: #fff;
 }
 
+.month-schedule-card,
+.home-nav-card {
+  border: 1px solid rgba(39, 102, 123, .16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 28px rgba(18, 33, 31, .08);
+}
+
+.month-schedule-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.month-schedule-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.month-schedule-head div {
+  display: grid;
+  gap: 3px;
+}
+
+.month-schedule-head strong {
+  color: var(--green);
+  font-size: 16px;
+}
+
+.month-schedule-head span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.month-schedule-list {
+  display: grid;
+  max-height: 260px;
+  gap: 7px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.month-schedule-item {
+  display: grid;
+  grid-template-columns: 58px 1fr auto;
+  align-items: center;
+  min-height: 54px;
+  gap: 8px;
+  border: 1px solid rgba(216, 227, 223, .9);
+  border-radius: 14px;
+  background: #fbfaf7;
+  padding: 8px;
+  text-align: left;
+}
+
+.month-schedule-item time {
+  display: grid;
+  min-height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: #e9f3ee;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.month-schedule-item div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.month-schedule-item strong,
+.month-schedule-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.month-schedule-item strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.month-schedule-item span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.month-schedule-item em {
+  border-radius: 999px;
+  background: #f2eee6;
+  padding: 5px 7px;
+  color: #7a5130;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.month-schedule-empty {
+  display: grid;
+  gap: 4px;
+  border-radius: 14px;
+  background: #fbfaf7;
+  padding: 12px;
+}
+
+.month-schedule-empty strong {
+  color: var(--green);
+}
+
+.month-schedule-empty span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.home-nav-card {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 9px;
+}
+
+.home-nav-card button {
+  min-height: 54px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f5f0e8);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: inset 0 -2px 0 rgba(184, 121, 47, .2);
+}
+
 .kid-optional-card {
   display: none;
 }
@@ -1601,42 +1740,23 @@ audio,
 .bottom-nav button {
   display: grid;
   place-items: center;
-  gap: 3px;
-  min-height: 56px;
+  min-height: 44px;
   border-radius: 15px;
   background: transparent;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
 }
 
 .bottom-nav button::before {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 999px;
-  background: #f2eee6;
-  color: var(--green);
-  font-size: 13px;
-  line-height: 1;
-  font-weight: 900;
+  content: none;
+  display: none;
 }
-
-.bottom-nav button:nth-child(1)::before { content: "家"; }
-.bottom-nav button:nth-child(2)::before { content: "練"; }
-.bottom-nav button:nth-child(3)::before { content: "録"; }
-.bottom-nav button:nth-child(4)::before { content: "伸"; }
-.bottom-nav button:nth-child(5)::before { content: "大"; }
 
 .bottom-nav button.active {
   background: var(--green);
   color: #fff;
   box-shadow: inset 0 -3px 0 rgba(184, 121, 47, .55);
-}
-.bottom-nav button.active::before {
-  background: #fff;
-  color: var(--green);
 }
 
 .celebration-toast {
@@ -1765,7 +1885,15 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .lesson-form label:nth-child(4),
   .lesson-form button { grid-column: auto; }
   .piece-form { grid-template-columns: 1fr; }
-  .quick-start-card { grid-template-columns: 1fr; }
+  .quick-start-card,
+  .home-nav-card { grid-template-columns: 1fr 1fr; }
+  .month-schedule-head,
+  .month-schedule-item { grid-template-columns: 1fr; }
+  .month-schedule-item time {
+    width: fit-content;
+    min-height: 28px;
+    padding: 0 9px;
+  }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .score-panel { grid-template-columns: 1fr; }
   .score-ring { width: 96px; height: 96px; }
@@ -1774,5 +1902,5 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .trial-summary { grid-template-columns: 1fr; }
   .storage-report { grid-template-columns: 1fr; }
   .split-actions { grid-template-columns: 1fr; }
-  .bottom-nav button { font-size: 11px; }
+  .bottom-nav button { font-size: 11px; min-height: 42px; }
 }

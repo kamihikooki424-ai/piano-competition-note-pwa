@@ -62,6 +62,8 @@ const els = {
   homeStatusList: $("#homeStatusList"),
   todayPracticeLabel: $("#todayPracticeLabel"),
   nextLessonLabel: $("#nextLessonLabel"),
+  monthScheduleSummary: $("#monthScheduleSummary"),
+  monthScheduleList: $("#monthScheduleList"),
   homeMissionCard: $("#homeMissionCard"),
   homeMissionTitle: $("#homeMissionTitle"),
   homeMissionDetail: $("#homeMissionDetail"),
@@ -650,6 +652,7 @@ function renderHome() {
     ? `${nextTask.title}：あと${Math.max(0, nextTask.target - nextTask.count)}回`
     : "今日の練習指示は完了です。音か動画で見返しましょう。";
   renderNextLessonSummary();
+  renderMonthSchedule();
   renderHomeMission();
   renderPracticeStats();
   renderPracticeSticker();
@@ -811,6 +814,91 @@ function getUpcomingLessonSchedules() {
 function lessonScheduleLabel(item) {
   const date = item.date ? formatDate(item.date) : "日付未設定";
   return `${date}${item.time ? ` ${item.time}` : ""}`;
+}
+
+function isDateWithinNextMonth(value) {
+  const days = daysUntil(value);
+  return days !== null && days >= 0 && days <= 30;
+}
+
+function getMonthScheduleItems() {
+  const lessonItems = getSortedLessonSchedules()
+    .filter((item) => isDateWithinNextMonth(item.date))
+    .map((item) => ({
+      id: `lesson-${item.id}`,
+      date: item.date,
+      time: item.time || "",
+      type: "レッスン",
+      title: item.title || "レッスン",
+      detail: item.memo || "ピアノの日",
+      view: "settingsView"
+    }));
+
+  const competitionItems = state.competitions.flatMap((competition) => {
+    const items = [];
+    if (isDateWithinNextMonth(competition.deadline)) {
+      items.push({
+        id: `deadline-${competition.id}`,
+        date: competition.deadline,
+        time: "",
+        type: "しめきり",
+        title: `${competition.name || "コンクール"} 申込`,
+        detail: competition.division || competition.venue || "申込を確認",
+        view: "homeView"
+      });
+    }
+    if (isDateWithinNextMonth(competition.eventDate)) {
+      items.push({
+        id: `event-${competition.id}`,
+        date: competition.eventDate,
+        time: "",
+        type: "本番",
+        title: competition.name || "コンクール",
+        detail: competition.venue || competition.division || "本番の日",
+        view: "homeView"
+      });
+    }
+    return items;
+  });
+
+  return [...lessonItems, ...competitionItems].sort((a, b) => {
+    const aTime = `${a.date || "9999-12-31"}T${a.time || "23:59"}`;
+    const bTime = `${b.date || "9999-12-31"}T${b.time || "23:59"}`;
+    return aTime.localeCompare(bTime);
+  });
+}
+
+function renderMonthSchedule() {
+  if (!els.monthScheduleList || !els.monthScheduleSummary) return;
+  const items = getMonthScheduleItems();
+  els.monthScheduleSummary.textContent = items.length
+    ? `${items.length}件あります`
+    : "30日以内の予定はありません";
+
+  if (items.length === 0) {
+    els.monthScheduleList.innerHTML = `
+      <div class="month-schedule-empty">
+        <strong>予定なし</strong>
+        <span>レッスン日や本番日を入れるとここに出ます。</span>
+      </div>
+    `;
+    return;
+  }
+
+  els.monthScheduleList.innerHTML = items.slice(0, 10).map((item) => `
+    <button class="month-schedule-item" data-month-schedule-view="${item.view}" type="button">
+      <time datetime="${escapeHtml(item.date)}">${escapeHtml(formatDate(item.date).replace("年", "/").replace("月", "/").replace("日", ""))}</time>
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(item.time ? `${item.time} ${item.detail}` : item.detail)}</span>
+      </div>
+      <em>${escapeHtml(item.type)}</em>
+    </button>
+  `).join("");
+
+  els.monthScheduleList.querySelectorAll("[data-month-schedule-view]").forEach((button) => {
+    button.addEventListener("click", () => setView(button.dataset.monthScheduleView));
+  });
 }
 
 function renderNextLessonSummary() {
@@ -1815,7 +1903,7 @@ function roleLabel(role) {
 function buildTrialInvite() {
   const trialItems = trialCheckDefinitions().map(([, title]) => `・${title}`);
   return [
-    "【ピアノコンクールノート 試用URL】",
+    "【ピアノ音 試用URL】",
     PUBLIC_APP_URL,
     "",
     "■ 使い始め",
@@ -1967,7 +2055,7 @@ function buildFeedbackSummary() {
   }
   const average = getFeedbackAverage();
   const lines = [
-    "【ピアノコンクールノート 試用フィードバック】",
+    "【ピアノ音 試用フィードバック】",
     `件数：${state.feedbacks.length}`,
     `平均評価：${average.toFixed(1)} / 5`,
     formatTrialProgressForShare(),
@@ -2516,7 +2604,7 @@ function renderStorageReport() {
 
 function buildStorageReport() {
   return [
-    "【ピアノコンクールノート 端末内データ診断】",
+    "【ピアノ音 端末内データ診断】",
     `作成日：${formatDate(todayKey())}`,
     "",
     ...getStorageReportItems().map(([label, value]) => `${label}：${value}`),

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#16332f">
-  <title>ピアノコンクールノート</title>
+  <title>ピアノ音</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -17,7 +17,7 @@
         </div>
         <div>
           <p class="eyebrow">ピアノれんしゅう</p>
-          <h1>ピアノコンクールノート</h1>
+          <h1>ピアノ音</h1>
         </div>
       </div>
       <button class="round-button" id="openCompetitionButton" aria-label="コンクールを追加">＋</button>
@@ -70,10 +70,22 @@
           <div class="stamp-days" id="stampCardDays"></div>
         </section>
 
-        <section class="quick-start-card kid-optional-card" aria-hidden="true">
-          <button data-view-shortcut="practiceView"><span>1</span>れんしゅう</button>
-          <button data-view-shortcut="recordView"><span>2</span>ろくおん</button>
-          <button data-view-shortcut="growthView"><span>3</span>せいちょう</button>
+        <section class="month-schedule-card">
+          <div class="month-schedule-head">
+            <div>
+              <strong>1か月の予定</strong>
+              <span id="monthScheduleSummary">予定を確認中</span>
+            </div>
+            <button class="text-button" data-view-shortcut="settingsView" type="button">予定を入れる</button>
+          </div>
+          <div id="monthScheduleList" class="month-schedule-list"></div>
+        </section>
+
+        <section class="home-nav-card" aria-label="画面移動">
+          <button data-view-shortcut="practiceView" type="button">れんしゅう</button>
+          <button data-view-shortcut="recordView" type="button">きろく</button>
+          <button data-view-shortcut="growthView" type="button">せいちょう</button>
+          <button data-view-shortcut="settingsView" type="button">おとな</button>
         </section>
 
         <details class="parent-menu home-parent-menu">
