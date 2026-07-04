@@ -1,13 +1,14 @@
 :root {
   color-scheme: light;
-  --ink: #182522;
-  --muted: #65736f;
-  --paper: #fbfaf7;
-  --line: #d8e3df;
-  --green: #16332f;
-  --gold: #b8792f;
-  --rose: #b7435b;
-  --blue: #27667b;
+  --ink: #1b1916;
+  --muted: #6c665d;
+  --paper: #fffdf8;
+  --line: #dfd5c4;
+  --green: #18332f;
+  --gold: #a7742d;
+  --rose: #8f2f46;
+  --blue: #2d6072;
+  --piano-black: #171513;
   --shadow: 0 18px 42px rgba(18, 33, 31, .16);
 }
 
@@ -16,7 +17,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #202522;
+  background:
+    radial-gradient(circle at 50% 0, rgba(167, 116, 45, .18), transparent 34%),
+    linear-gradient(135deg, #211f1c, #101715);
   color: var(--ink);
   font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -32,9 +35,19 @@ input, textarea, select { width: 100%; }
   margin: 0 auto;
   padding: 14px 14px 96px;
   background:
-    linear-gradient(90deg, rgba(22, 51, 47, .055) 1px, transparent 1px),
-    linear-gradient(180deg, #fbfaf7, #f4f7f5);
-  background-size: 22px 100%, 100% 100%;
+    repeating-linear-gradient(180deg,
+      rgba(45, 96, 114, .12) 0 1px,
+      transparent 1px 9px,
+      rgba(45, 96, 114, .12) 9px 10px,
+      transparent 10px 18px,
+      rgba(45, 96, 114, .12) 18px 19px,
+      transparent 19px 27px,
+      rgba(45, 96, 114, .12) 27px 28px,
+      transparent 28px 36px,
+      rgba(45, 96, 114, .12) 36px 37px,
+      transparent 37px 78px),
+    linear-gradient(180deg, #fffdf8, #f5efe3 68%, #f9f4ea);
+  background-size: 100% 78px, 100% 100%;
 }
 
 .topbar, .tool-heading, .dialog-heading {
@@ -104,12 +117,14 @@ main { padding-top: 12px; }
 .view { display: none; }
 .view.active { display: grid; gap: 12px; }
 
-.hero-panel, .studio-panel, .record-panel, .score-panel {
+.hero-panel, .studio-panel, .schedule-panel, .record-panel, .score-panel {
   position: relative;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 10px;
   padding: 18px;
-  background: linear-gradient(135deg, #162420, #16332f 48%, #5a3d2a);
+  background:
+    linear-gradient(135deg, rgba(23, 21, 19, .96), rgba(24, 51, 47, .92) 48%, rgba(143, 47, 70, .86)),
+    repeating-linear-gradient(180deg, transparent 0 9px, rgba(255,255,255,.12) 9px 10px);
   color: #fff;
   box-shadow: var(--shadow);
 }
@@ -127,7 +142,7 @@ main { padding-top: 12px; }
   z-index: 3;
   max-width: 64%;
 }
-.hero-panel p, .studio-panel p, .record-panel p, .score-panel p { margin-top: 8px; color: rgba(255, 255, 255, .74); line-height: 1.6; }
+.hero-panel p, .studio-panel p, .schedule-panel p, .record-panel p, .score-panel p { margin-top: 8px; color: rgba(255, 255, 255, .74); line-height: 1.6; }
 .hero-date { margin: 0 0 8px !important; color: rgba(255, 255, 255, .72) !important; font-weight: 900; }
 
 .hero-illustration {
@@ -264,6 +279,15 @@ main { padding-top: 12px; }
 .backup-nudge-card .text-button { grid-column: 2; grid-row: 1 / span 2; }
 .notice-card strong, .today-card strong, .backup-nudge-card strong, .trial-share-card strong { color: var(--green); }
 .notice-card span, .today-card span, .backup-nudge-card span, .trial-share-card span { color: #5b432b; font-size: 13px; line-height: 1.6; }
+.public-url-text {
+  display: block;
+  margin-top: 6px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
 .trial-share-actions {
   display: grid;
   grid-template-columns: auto auto;
@@ -1057,6 +1081,111 @@ main { padding-top: 12px; }
 }
 
 .tool-card { padding: 15px; }
+
+.practice-session-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(167, 116, 45, .35);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, .96), rgba(250, 242, 229, .96)),
+    repeating-linear-gradient(180deg, transparent 0 9px, rgba(45, 96, 114, .11) 9px 10px);
+  padding: 14px;
+  box-shadow: 0 12px 30px rgba(18, 33, 31, .08);
+}
+.practice-session-card strong {
+  display: block;
+  color: var(--green);
+  font-size: 15px;
+}
+.practice-session-card span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.practice-session-actions {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 8px;
+}
+.practice-session-actions button {
+  min-height: 44px;
+  white-space: normal;
+}
+.practice-session-actions button:disabled {
+  opacity: .55;
+  cursor: default;
+}
+.metronome-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bpm-inline {
+  border-radius: 999px;
+  background: #f1eadf;
+  color: var(--green);
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.calendar-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(27, 25, 22, .12);
+  border-radius: 10px;
+  background: rgba(255, 253, 248, .96);
+  padding: 14px;
+  box-shadow: 0 14px 34px rgba(18, 33, 31, .1);
+}
+.lesson-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.calendar-weekday {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+.calendar-day {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 62px;
+  border: 1px solid rgba(223, 213, 196, .95);
+  border-radius: 8px;
+  background: #fffdf8;
+  padding: 7px 5px;
+  color: var(--ink);
+  text-align: left;
+}
+.calendar-day.empty {
+  background: rgba(255,255,255,.35);
+  border-style: dashed;
+}
+.calendar-day strong {
+  color: var(--piano-black);
+  font-size: 13px;
+  line-height: 1;
+}
+.calendar-day span {
+  min-height: 28px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.calendar-day.today {
+  border-color: rgba(143, 47, 70, .55);
+  box-shadow: inset 0 0 0 2px rgba(143, 47, 70, .12);
+}
+.calendar-day.has-event {
+  background: linear-gradient(180deg, #fffdf8, #fff3dc);
+  border-color: rgba(167, 116, 45, .52);
+}
 .tool-heading p { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .profile-form {
   display: grid;
@@ -1548,6 +1677,39 @@ input:focus, textarea:focus, select:focus {
   right: 10px;
 }
 
+.note-timeline {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+.note-entry {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 10px;
+  border-left: 4px solid var(--gold);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255,253,248,.96), rgba(250,242,229,.94)),
+    repeating-linear-gradient(180deg, transparent 0 9px, rgba(45, 96, 114, .1) 9px 10px);
+  padding: 10px;
+}
+.note-entry time {
+  color: var(--rose);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+.note-entry strong {
+  color: var(--green);
+  font-size: 13px;
+}
+.note-entry p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .teacher-comment-actions {
   display: flex;
   justify-content: flex-end;
@@ -1888,6 +2050,7 @@ label { display: grid; gap: 6px; color: #32443f; font-size: 13px; font-weight: 9
   .kid-practice-card h3 { max-width: 100%; font-size: 22px; }
   .kid-practice-actions { grid-template-columns: 1fr 1fr; }
   .kid-main-button { grid-column: 1 / -1; }
+  .practice-session-actions { grid-template-columns: 1fr; }
   .practice-sticker-card { grid-template-columns: auto 1fr; }
   .practice-sticker-card .text-button { grid-column: 1 / -1; }
   .readiness-head { grid-template-columns: 1fr; }

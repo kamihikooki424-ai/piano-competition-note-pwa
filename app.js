@@ -41,7 +41,11 @@ const state = {
   editingScoreId: "",
   practiceTimerSeconds: 15 * 60,
   practiceTimerRemaining: 15 * 60,
-  practiceTimerId: null
+  practiceTimerId: null,
+  practiceSessionStartedAt: 0,
+  practiceSessionElapsed: 0,
+  practiceSessionTimerId: null,
+  practiceSessionRunning: false
 };
 
 let stampAnimationDate = "";
@@ -91,18 +95,27 @@ const els = {
   kidPracticeTimerButton: $("#kidPracticeTimerButton"),
   kidPracticeTimerLabel: $("#kidPracticeTimerLabel"),
   kidPracticeRecordButton: $("#kidPracticeRecordButton"),
+  practiceSessionLabel: $("#practiceSessionLabel"),
+  practiceSessionStatus: $("#practiceSessionStatus"),
+  practiceSessionStartButton: $("#practiceSessionStartButton"),
+  practiceSessionPauseButton: $("#practiceSessionPauseButton"),
+  practiceSessionFinishButton: $("#practiceSessionFinishButton"),
   setupCard: $("#setupCard"),
   setupTitle: $("#setupTitle"),
   setupSummary: $("#setupSummary"),
   setupChecks: $("#setupChecks"),
   homeBackupNudge: $("#homeBackupNudge"),
   homeBackupNudgeText: $("#homeBackupNudgeText"),
+  publicAppUrlText: $("#publicAppUrlText"),
   backupReminderText: $("#backupReminderText"),
   profileSummary: $("#profileSummary"),
   childNameInput: $("#childNameInput"),
   childGradeInput: $("#childGradeInput"),
   childBirthYearInput: $("#childBirthYearInput"),
   childMemoInput: $("#childMemoInput"),
+  calendarMonthLabel: $("#calendarMonthLabel"),
+  lessonCalendar: $("#lessonCalendar"),
+  todayScheduleButton: $("#todayScheduleButton"),
   lessonScheduleList: $("#lessonScheduleList"),
   competitionList: $("#competitionList"),
   pieceList: $("#pieceList"),
@@ -128,6 +141,7 @@ const els = {
   scoreTotalPreview: $("#scoreTotalPreview"),
   scoreChart: $("#scoreChart"),
   scoreList: $("#scoreList"),
+  noteTimeline: $("#noteTimeline"),
   teacherMemoOutput: $("#teacherMemoOutput"),
   teacherReviewOutput: $("#teacherReviewOutput"),
   teacherCommentList: $("#teacherCommentList"),
@@ -628,6 +642,7 @@ function render() {
   renderRecordingMode();
   renderRecordings();
   renderLessonSchedules();
+  renderLessonCalendar();
   renderGrowth();
   renderTrialTools();
   renderChildProfile();
@@ -844,7 +859,7 @@ function getMonthScheduleItems() {
       type: getScheduleType(item),
       title: item.title || getScheduleType(item),
       detail: item.memo || "ピアノの日",
-      view: "settingsView"
+      view: "scheduleView"
     }));
 
   const competitionItems = state.competitions.flatMap((competition) => {
@@ -885,7 +900,7 @@ function renderMonthSchedule() {
   if (!els.monthScheduleList || !els.monthScheduleSummary) return;
   const items = getMonthScheduleItems();
   els.monthScheduleSummary.textContent = items.length
-    ? `${items.length}件あります`
+    ? `${items[0].title} / ${formatDays(items[0].date)}`
     : "30日以内の予定はありません";
 
   if (items.length === 0) {
@@ -898,7 +913,7 @@ function renderMonthSchedule() {
     return;
   }
 
-  els.monthScheduleList.innerHTML = items.slice(0, 10).map((item) => `
+  els.monthScheduleList.innerHTML = items.slice(0, 3).map((item) => `
     <button class="month-schedule-item" data-month-schedule-view="${item.view}" type="button">
       <time datetime="${escapeHtml(item.date)}">${escapeHtml(formatDate(item.date).replace("年", "/").replace("月", "/").replace("日", ""))}</time>
       <div>
@@ -951,6 +966,89 @@ function renderLessonSchedules() {
   });
   els.lessonScheduleList.querySelectorAll("[data-delete-lesson]").forEach((button) => {
     button.addEventListener("click", () => deleteLessonSchedule(button.dataset.deleteLesson));
+  });
+}
+
+function getScheduleItemsForCalendar() {
+  const lessonItems = getSortedLessonSchedules().map((item) => ({
+    id: `lesson-${item.id}`,
+    date: item.date,
+    type: getScheduleType(item),
+    title: item.title || getScheduleType(item),
+    detail: item.time || item.memo || "",
+    source: "lesson"
+  }));
+  const competitionItems = state.competitions.flatMap((competition) => {
+    const items = [];
+    if (competition.deadline) {
+      items.push({
+        id: `deadline-${competition.id}`,
+        date: competition.deadline,
+        type: "申込",
+        title: `${competition.name || "コンクール"} 締切`,
+        detail: competition.division || "",
+        source: "competition"
+      });
+    }
+    if (competition.eventDate) {
+      items.push({
+        id: `event-${competition.id}`,
+        date: competition.eventDate,
+        type: "本番",
+        title: competition.name || "コンクール本番",
+        detail: competition.venue || "",
+        source: "competition"
+      });
+    }
+    return items;
+  });
+  return [...lessonItems, ...competitionItems].filter((item) => item.date);
+}
+
+function renderLessonCalendar() {
+  if (!els.lessonCalendar || !els.calendarMonthLabel) return;
+  const base = parseDate(todayKey()) || new Date();
+  const year = base.getFullYear();
+  const month = base.getMonth();
+  els.calendarMonthLabel.textContent = `${year}年${month + 1}月`;
+  const firstDay = new Date(year, month, 1);
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const startOffset = firstDay.getDay();
+  const itemsByDate = getScheduleItemsForCalendar().reduce((map, item) => {
+    if (!map.has(item.date)) map.set(item.date, []);
+    map.get(item.date).push(item);
+    return map;
+  }, new Map());
+  const cells = [];
+  const weekLabels = ["日", "月", "火", "水", "木", "金", "土"];
+  weekLabels.forEach((label) => {
+    cells.push(`<div class="calendar-weekday">${label}</div>`);
+  });
+  for (let i = 0; i < startOffset; i += 1) {
+    cells.push(`<div class="calendar-day empty" aria-hidden="true"></div>`);
+  }
+  for (let day = 1; day <= lastDate; day += 1) {
+    const dateKey = toDateKey(new Date(year, month, day));
+    const items = itemsByDate.get(dateKey) || [];
+    const classes = [
+      "calendar-day",
+      dateKey === todayKey() ? "today" : "",
+      items.length ? "has-event" : ""
+    ].filter(Boolean).join(" ");
+    cells.push(`
+      <button class="${classes}" data-calendar-date="${dateKey}" type="button">
+        <strong>${day}</strong>
+        <span>${items.slice(0, 2).map((item) => escapeHtml(item.type)).join(" / ")}</span>
+      </button>
+    `);
+  }
+  els.lessonCalendar.innerHTML = cells.join("");
+  els.lessonCalendar.querySelectorAll("[data-calendar-date]").forEach((button) => {
+    button.addEventListener("click", () => {
+      $("#lessonDateInput").value = button.dataset.calendarDate;
+      setView("scheduleView");
+      $("#lessonTitleInput").focus();
+    });
   });
 }
 
@@ -1083,6 +1181,7 @@ function renderPractice() {
   els.tempoSlider.value = String(state.bpm);
   els.practiceTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
   els.kidPracticeTimerLabel.textContent = formatDuration(state.practiceTimerRemaining);
+  renderPracticeSession();
   renderKidPracticeCard();
   renderPieces();
   renderPracticeLogs();
@@ -1117,6 +1216,87 @@ function renderPractice() {
   $$("[data-task-plus]").forEach((button) => button.addEventListener("click", () => updateTask(button.dataset.taskPlus, 1)));
   $$("[data-task-reset]").forEach((button) => button.addEventListener("click", () => resetTask(button.dataset.taskReset)));
   $$("[data-edit-task]").forEach((button) => button.addEventListener("click", () => openTaskDialog(button.dataset.editTask)));
+}
+
+function getPracticeSessionSeconds() {
+  const runningSeconds = state.practiceSessionRunning && state.practiceSessionStartedAt
+    ? Math.floor((Date.now() - state.practiceSessionStartedAt) / 1000)
+    : 0;
+  return Math.max(0, Number(state.practiceSessionElapsed || 0) + runningSeconds);
+}
+
+function renderPracticeSession() {
+  if (!els.practiceSessionLabel) return;
+  const seconds = getPracticeSessionSeconds();
+  els.practiceSessionLabel.textContent = formatDuration(seconds);
+  if (state.practiceSessionRunning) {
+    els.practiceSessionStatus.textContent = "練習中です。終わったら記録できます。";
+    els.practiceSessionStartButton.textContent = "練習中";
+    els.practiceSessionStartButton.disabled = true;
+    els.practiceSessionPauseButton.disabled = false;
+    els.practiceSessionFinishButton.disabled = seconds < 1;
+    return;
+  }
+  if (seconds > 0) {
+    els.practiceSessionStatus.textContent = "一時停止中です。再開または終了して記録できます。";
+    els.practiceSessionStartButton.textContent = "再開";
+    els.practiceSessionStartButton.disabled = false;
+    els.practiceSessionPauseButton.disabled = true;
+    els.practiceSessionFinishButton.disabled = false;
+    return;
+  }
+  els.practiceSessionStatus.textContent = "まだ開始していません";
+  els.practiceSessionStartButton.textContent = "練習開始";
+  els.practiceSessionStartButton.disabled = false;
+  els.practiceSessionPauseButton.disabled = true;
+  els.practiceSessionFinishButton.disabled = true;
+}
+
+function startPracticeSession() {
+  if (state.practiceSessionRunning) return;
+  state.practiceSessionRunning = true;
+  state.practiceSessionStartedAt = Date.now();
+  window.clearInterval(state.practiceSessionTimerId);
+  state.practiceSessionTimerId = window.setInterval(renderPracticeSession, 1000);
+  renderPracticeSession();
+}
+
+function pausePracticeSession() {
+  if (!state.practiceSessionRunning) return;
+  state.practiceSessionElapsed = getPracticeSessionSeconds();
+  state.practiceSessionRunning = false;
+  state.practiceSessionStartedAt = 0;
+  window.clearInterval(state.practiceSessionTimerId);
+  state.practiceSessionTimerId = null;
+  renderPracticeSession();
+}
+
+function finishPracticeSession() {
+  const seconds = getPracticeSessionSeconds();
+  if (seconds < 1) return;
+  const minutes = Math.max(1, Math.min(240, Math.ceil(seconds / 60)));
+  const memo = $("#practiceLogMemoInput").value.trim() || "個人練習タイマーで記録";
+  state.isSampleData = false;
+  state.practiceLogs.push({
+    id: createId(),
+    date: todayKey(),
+    minutes,
+    memo,
+    doneSummary: getTaskDoneSummary(),
+    source: "practiceSession",
+    measuredSeconds: seconds
+  });
+  addPracticeStamp();
+  $("#practiceMinutesInput").value = String(minutes);
+  $("#practiceLogMemoInput").value = "";
+  state.practiceSessionElapsed = 0;
+  state.practiceSessionStartedAt = 0;
+  state.practiceSessionRunning = false;
+  window.clearInterval(state.practiceSessionTimerId);
+  state.practiceSessionTimerId = null;
+  save();
+  render();
+  showPracticeCelebration();
 }
 
 function renderKidPracticeCard() {
@@ -1286,6 +1466,7 @@ function renderGrowth() {
   els.latestScoreHero.textContent = latest ? latest.total : "-";
   updateScorePreview();
   renderTeacherComments();
+  renderNoteTimeline();
 
   if (sorted.length === 0) {
     els.scoreChart.innerHTML = `<div class="notice-card"><strong>採点はまだありません</strong><span>上のフォームから先生・保護者の採点を保存できます。</span></div>`;
@@ -1327,6 +1508,50 @@ function renderGrowth() {
   });
   els.teacherMemoOutput.value = buildTeacherMemo();
   els.teacherReviewOutput.value = buildTeacherReviewRequest();
+}
+
+function renderNoteTimeline() {
+  if (!els.noteTimeline) return;
+  const practiceItems = state.practiceLogs.map((log) => ({
+    date: log.date,
+    type: "練習",
+    title: `${formatMinutes(log.minutes)} / ${log.doneSummary || "練習記録"}`,
+    body: log.memo || "メモなし"
+  }));
+  const scoreItems = state.scores.map((score) => ({
+    date: score.date,
+    type: "採点",
+    title: `${score.total}点 / ${scoreTypeLabel(score.type)}`,
+    body: score.comment || score.next || "採点メモなし"
+  }));
+  const teacherItems = state.teacherComments.map((comment) => ({
+    date: comment.date,
+    type: "先生",
+    title: "先生コメント",
+    body: comment.next || comment.body || "コメントなし"
+  }));
+  const recordingItems = state.recordings.map((recording) => ({
+    date: todayKey(),
+    type: getRecordingKindLabel(recording),
+    title: recording.name,
+    body: `${recording.createdAt} / ${recording.duration}${recording.memo ? ` / ${recording.memo}` : ""}`
+  }));
+  const items = [...practiceItems, ...scoreItems, ...teacherItems, ...recordingItems]
+    .sort((a, b) => `${b.date || ""}`.localeCompare(`${a.date || ""}`))
+    .slice(0, 8);
+  if (items.length === 0) {
+    els.noteTimeline.innerHTML = `<div class="notice-card"><strong>ノートはまだ空です</strong><span>練習、録音、先生コメントを残すとここに並びます。</span></div>`;
+    return;
+  }
+  els.noteTimeline.innerHTML = items.map((item) => `
+    <article class="note-entry">
+      <time>${escapeHtml(formatDate(item.date))}</time>
+      <div>
+        <strong>${escapeHtml(item.type)}：${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.body)}</p>
+      </div>
+    </article>
+  `).join("");
 }
 
 function renderTeacherComments() {
@@ -2631,7 +2856,7 @@ function getStorageReportItems() {
     ["プロフィール", state.childProfile?.name ? "登録済み" : "未登録"],
     ["コンクール", `${state.competitions.length}件`],
     ["曲", `${state.pieces.length}件`],
-    ["1ヶ月の予定", `${state.lessonSchedules.length}件`],
+    ["レッスン予定", `${state.lessonSchedules.length}件`],
     ["練習指示", `${state.tasks.length}件`],
     ["練習記録", `${state.practiceLogs.length}件`],
     ["シール", `${getPracticeStampCount()}枚`],
@@ -2767,6 +2992,11 @@ async function clearAllData() {
   state.recordingMode = "audio";
   state.practiceTimerSeconds = 15 * 60;
   state.practiceTimerRemaining = state.practiceTimerSeconds;
+  state.practiceSessionStartedAt = 0;
+  state.practiceSessionElapsed = 0;
+  state.practiceSessionRunning = false;
+  window.clearInterval(state.practiceSessionTimerId);
+  state.practiceSessionTimerId = null;
   save();
   render();
   els.recordMessage.textContent = "端末内データを削除しました。";
@@ -2788,6 +3018,9 @@ function bind() {
   });
   els.timerStartButton.addEventListener("click", togglePracticeTimer);
   els.timerResetButton.addEventListener("click", resetPracticeTimer);
+  els.practiceSessionStartButton.addEventListener("click", startPracticeSession);
+  els.practiceSessionPauseButton.addEventListener("click", pausePracticeSession);
+  els.practiceSessionFinishButton.addEventListener("click", finishPracticeSession);
   els.kidPracticeDoneButton.addEventListener("click", completeKidPracticeTask);
   els.kidPracticeTimerButton.addEventListener("click", startKidPracticeTimer);
   els.kidPracticeRecordButton.addEventListener("click", () => setView("recordView"));
@@ -2817,6 +3050,10 @@ function bind() {
   $("#saveChildProfileButton").addEventListener("click", saveChildProfile);
   $("#addLessonButton").addEventListener("click", addLessonSchedule);
   $("#cancelLessonEditButton").addEventListener("click", resetLessonScheduleForm);
+  els.todayScheduleButton.addEventListener("click", () => {
+    $("#lessonDateInput").value = todayKey();
+    $("#lessonTitleInput").focus();
+  });
   resetLessonScheduleForm();
   $("#closeOnboardingButton").addEventListener("click", closeOnboarding);
   $("#startOnboardingButton").addEventListener("click", startOnboarding);
@@ -2834,6 +3071,8 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 
+els.publicAppUrlText.textContent = PUBLIC_APP_URL;
+els.publicAppUrlText.href = PUBLIC_APP_URL;
 load();
 bind();
 render();

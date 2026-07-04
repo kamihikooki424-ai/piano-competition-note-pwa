@@ -28,8 +28,8 @@
         <section class="hero-panel">
           <div>
             <p id="todayLabel" class="hero-date"></p>
-            <h2>今日のピアノ</h2>
-            <p id="nextDeadlineLabel">次の締切を確認中</p>
+            <h2>今日のページ</h2>
+            <p id="nextDeadlineLabel">今日の練習と予定を確認中</p>
           </div>
           <img class="hero-illustration" src="assets/home-piano-hero-v2.png" alt="" aria-hidden="true">
           <div class="hero-keyboard" aria-hidden="true">
@@ -46,7 +46,7 @@
           <p id="homeMissionDetail">ひとつずつ、やってみよう。</p>
           <div class="mission-actions">
             <button class="mission-done-button" id="homeMissionDoneButton" type="button">できた</button>
-            <button class="text-button" data-view-shortcut="practiceView">れんしゅうへ</button>
+            <button class="text-button" data-view-shortcut="practiceView">個人練習へ</button>
           </div>
         </section>
 
@@ -56,7 +56,7 @@
             <strong id="practiceStickerTitle">きょうのシール</strong>
             <span id="practiceStickerText">れんしゅうするとシールがつきます。</span>
           </div>
-            <button class="text-button" data-view-shortcut="practiceView">れんしゅうへ</button>
+            <button class="text-button" data-view-shortcut="practiceView">個人練習へ</button>
         </section>
 
         <section class="stamp-card">
@@ -70,22 +70,22 @@
           <div class="stamp-days" id="stampCardDays"></div>
         </section>
 
-        <section class="month-schedule-card">
+        <section class="month-schedule-card home-next-card">
           <div class="month-schedule-head">
             <div>
-              <strong>1ヶ月の予定</strong>
+              <strong>次の予定</strong>
               <span id="monthScheduleSummary">予定を確認中</span>
             </div>
-            <button class="text-button" data-view-shortcut="settingsView" type="button">予定を入れる</button>
+            <button class="text-button" data-view-shortcut="scheduleView" type="button">カレンダーへ</button>
           </div>
           <div id="monthScheduleList" class="month-schedule-list"></div>
         </section>
 
         <section class="home-nav-card" aria-label="画面移動">
-          <button data-view-shortcut="practiceView" type="button">れんしゅう</button>
-          <button data-view-shortcut="recordView" type="button">きろく</button>
-          <button data-view-shortcut="growthView" type="button">せいちょう</button>
-          <button data-view-shortcut="settingsView" type="button">おとな</button>
+          <button data-view-shortcut="practiceView" type="button">個人練習</button>
+          <button data-view-shortcut="scheduleView" type="button">予定</button>
+          <button data-view-shortcut="recordView" type="button">録音</button>
+          <button data-view-shortcut="growthView" type="button">ノート</button>
         </section>
 
         <details class="parent-menu home-parent-menu">
@@ -122,7 +122,7 @@
             <section class="today-card">
               <strong>次のレッスン</strong>
               <span id="nextLessonLabel">予定を確認中</span>
-              <button class="text-button" data-view-shortcut="settingsView">予定へ</button>
+              <button class="text-button" data-view-shortcut="scheduleView">予定へ</button>
             </section>
 
             <section class="home-status-card">
@@ -170,6 +170,7 @@
               <div>
                 <strong>試してもらう</strong>
                 <span>無料公開URLをコピーして、保護者・先生に渡せます。</span>
+                <a class="public-url-text" id="publicAppUrlText" href="#" target="_blank" rel="noreferrer"></a>
               </div>
               <div class="trial-share-actions">
                 <button class="secondary-button" id="copyPublicUrlButton" type="button">URLコピー</button>
@@ -191,11 +192,23 @@
       <section class="view" id="practiceView">
         <section class="studio-panel">
           <div>
-            <p class="eyebrow">きょう</p>
-            <h2>れんしゅう</h2>
-            <p>できたらボタンを押します。</p>
+            <p class="eyebrow">Practice</p>
+            <h2>個人練習</h2>
+            <p>始めたら時間を計測して、終わったら練習記録に残します。</p>
           </div>
-          <div class="tempo-display"><strong id="bpmLabel">84</strong><span>BPM</span></div>
+          <div class="tempo-display"><strong id="practiceSessionLabel">0:00</strong><span>実測</span></div>
+        </section>
+
+        <section class="practice-session-card">
+          <div>
+            <strong>練習時間</strong>
+            <span id="practiceSessionStatus">まだ開始していません</span>
+          </div>
+          <div class="practice-session-actions">
+            <button class="primary-button" id="practiceSessionStartButton" type="button">練習開始</button>
+            <button class="secondary-button" id="practiceSessionPauseButton" type="button">一時停止</button>
+            <button class="secondary-button" id="practiceSessionFinishButton" type="button">終了して記録</button>
+          </div>
         </section>
 
         <section class="kid-practice-card" id="kidPracticeCard">
@@ -225,7 +238,10 @@
                   <h3>メトロノーム</h3>
                   <p>拍感・テンポ練習用</p>
                 </div>
-                <button class="pill-button" id="metronomeButton">開始</button>
+                <div class="metronome-head-actions">
+                  <strong class="bpm-inline"><span id="bpmLabel">84</span>BPM</strong>
+                  <button class="pill-button" id="metronomeButton">開始</button>
+                </div>
               </div>
               <div class="tempo-control">
                 <button id="tempoDown">−</button>
@@ -255,8 +271,8 @@
             <section class="tool-card">
               <div class="tool-heading">
                 <div>
-                  <h3>練習タイマー</h3>
-                  <p>短い集中練習を記録</p>
+                  <h3>区切りタイマー</h3>
+                  <p>10分だけ集中したい時に使います</p>
                 </div>
                 <strong class="timer-display" id="practiceTimerLabel">15:00</strong>
               </div>
@@ -303,6 +319,56 @@
         </details>
       </section>
 
+      <section class="view" id="scheduleView">
+        <section class="schedule-panel">
+          <div>
+            <p class="eyebrow">Lesson</p>
+            <h2>レッスン予定</h2>
+            <p>レッスン、本番、申込締切をカレンダーで確認します。</p>
+          </div>
+        </section>
+
+        <section class="calendar-card">
+          <div class="tool-heading">
+            <div>
+              <h3 id="calendarMonthLabel">今月の予定</h3>
+              <p>日付を押すと、その日の予定を追加できます。</p>
+            </div>
+            <button class="secondary-button" id="todayScheduleButton" type="button">今日</button>
+          </div>
+          <div id="lessonCalendar" class="lesson-calendar"></div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h2>予定を入れる</h2>
+              <p>レッスン、準備、申込、本番を登録します</p>
+            </div>
+          </div>
+          <div class="lesson-form">
+            <label>日付<input id="lessonDateInput" type="date"></label>
+            <label>時間<input id="lessonTimeInput" type="time"></label>
+            <label>
+              種類
+              <select id="lessonTypeInput">
+                <option value="レッスン">レッスン</option>
+                <option value="準備">準備</option>
+                <option value="申込">申込</option>
+                <option value="練習">練習</option>
+                <option value="本番">本番</option>
+                <option value="その他">その他</option>
+              </select>
+            </label>
+            <label>内容<input id="lessonTitleInput" type="text" placeholder="例：通常レッスン"></label>
+            <label>メモ<textarea id="lessonMemoInput" rows="2" placeholder="持ち物、準備すること、先生に聞くこと"></textarea></label>
+            <button class="primary-button" id="addLessonButton" type="button">予定を追加</button>
+            <button class="secondary-button" id="cancelLessonEditButton" type="button">編集をやめる</button>
+          </div>
+          <div id="lessonScheduleList" class="lesson-schedule-list"></div>
+        </section>
+      </section>
+
       <section class="view" id="recordView">
         <section class="record-panel">
           <p class="eyebrow">きろく</p>
@@ -330,12 +396,22 @@
       <section class="view" id="growthView">
         <section class="score-panel">
           <div>
-            <p class="eyebrow">せいちょう</p>
-            <h2>のびたかな</h2>
-            <p>点数を見ます。</p>
+            <p class="eyebrow">Notebook</p>
+            <h2>ピアノート</h2>
+            <p>練習、録音、先生コメントを1冊のノートとして残します。</p>
           </div>
           <img class="score-illustration" src="assets/growth-trophy-illustration.webp" alt="" aria-hidden="true">
           <div class="score-ring"><strong id="latestScoreHero">-</strong><span>最新点</span></div>
+        </section>
+
+        <section class="tool-card">
+          <div class="tool-heading">
+            <div>
+              <h3>ノート履歴</h3>
+              <p>練習、録音、先生コメントを日付順にまとめます</p>
+            </div>
+          </div>
+          <div id="noteTimeline" class="note-timeline"></div>
         </section>
 
         <section class="tool-card">
@@ -464,35 +540,6 @@
         <section class="tool-card">
           <div class="tool-heading">
             <div>
-              <h2>1ヶ月の予定</h2>
-              <p>レッスン、準備、申込などを入れます</p>
-            </div>
-          </div>
-          <div class="lesson-form">
-            <label>日付<input id="lessonDateInput" type="date"></label>
-            <label>時間<input id="lessonTimeInput" type="time"></label>
-            <label>
-              種類
-              <select id="lessonTypeInput">
-                <option value="レッスン">レッスン</option>
-                <option value="準備">準備</option>
-                <option value="申込">申込</option>
-                <option value="練習">練習</option>
-                <option value="本番">本番</option>
-                <option value="その他">その他</option>
-              </select>
-            </label>
-            <label>内容<input id="lessonTitleInput" type="text" placeholder="例：衣装の準備"></label>
-            <label>メモ<textarea id="lessonMemoInput" rows="2" placeholder="持ち物、準備すること、先生に聞くこと"></textarea></label>
-            <button class="primary-button" id="addLessonButton" type="button">予定を追加</button>
-            <button class="secondary-button" id="cancelLessonEditButton" type="button">編集をやめる</button>
-          </div>
-          <div id="lessonScheduleList" class="lesson-schedule-list"></div>
-        </section>
-
-        <section class="tool-card">
-          <div class="tool-heading">
-            <div>
               <h2>端末内データ診断</h2>
               <p>このスマホに保存されている内容</p>
             </div>
@@ -610,10 +657,10 @@
 
     <nav class="bottom-nav">
       <button class="active" data-view="homeView">ホーム</button>
-      <button data-view="practiceView">れんしゅう</button>
-      <button data-view="recordView">きろく</button>
-      <button data-view="growthView">せいちょう</button>
-      <button data-view="settingsView">おとな</button>
+      <button data-view="practiceView">練習</button>
+      <button data-view="scheduleView">予定</button>
+      <button data-view="recordView">録音</button>
+      <button data-view="growthView">ノート</button>
     </nav>
   </div>
 
